@@ -1,0 +1,12 @@
+{
+  "name": "steri-care-dashboard-app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "스테리케어 손익 대시보드 - static PWA, all backend logic lives in Supabase Edge Functions",
+  "scripts": {
+    "start": "serve -s . -l $PORT"
+  },
+  "dependencies": {
+    "serve": "^14.2.3"
+  }
+}
