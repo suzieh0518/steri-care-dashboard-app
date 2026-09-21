@@ -1,0 +1,11 @@
+{
+  "name": "스테리케어 손익 대시보드",
+  "short_name": "손익대시보드",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f9f9f7",
+  "theme_color": "#f9f9f7",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
