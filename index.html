@@ -110,9 +110,12 @@ section{margin-bottom:44px; padding-top:6px;}
 
 /* snapshot card */
 .snapshot-card{margin-bottom:24px;}
-.snapshot-top{margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--border);}
+.snapshot-top{display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--border);}
+.snapshot-top .snap-metric.bizdays .value{font-size:19px;}
+.snapshot-top .snap-metric.bizdays{text-align:right;}
 .snapshot-top .snap-metric .value{font-size:30px;}
 .snapshot-rest{display:grid; grid-template-columns:repeat(4,1fr); gap:18px;}
+.snapshot-rest.compact{grid-template-columns:repeat(2,1fr);}
 .snap-metric .label{font-size:11.5px; color:var(--text-muted); margin-bottom:6px; font-weight:600;}
 .snap-metric .value{font-size:19px; font-weight:800; font-variant-numeric:tabular-nums; margin-bottom:8px;}
 .snap-metric .deltas{display:flex; gap:6px; flex-wrap:wrap;}
@@ -271,18 +274,20 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
   <div class="card snapshot-card" id="snapshotCard"></div>
 
   <div class="tabs" id="tabNav">
-    <button class="tab-btn active" data-tab="sec4">당월 특이사항 및 원인</button>
-    <button class="tab-btn" data-tab="sec1">매출추이</button>
+    <button class="tab-btn active" data-tab="sec1">매출추이</button>
+    <button class="tab-btn" data-tab="sec4">당월 특이사항 및 원인</button>
     <button class="tab-btn" data-tab="sec5">가운 매출</button>
     <button class="tab-btn" data-tab="sec2">매출대비 비용</button>
     <button class="tab-btn" data-tab="sec3">경비 항목별 추이</button>
   </div>
 
-  <section id="sec1" class="tab-section" hidden>
+  <section id="sec1" class="tab-section">
     <div class="section-head"><span class="section-num">1</span><h2>매출 &amp; 손익 추이</h2></div>
     <p class="section-sub">매출액 · 영업이익 · 당기순이익</p>
 
     <div class="kpi-groups" id="kpiRow"></div>
+
+    <div class="card" id="quarterlyTable" style="margin-bottom:16px;"></div>
 
     <div class="chart-row">
       <div class="card" style="grid-column:1 / -1;">
@@ -334,7 +339,7 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
     <div class="card" id="expShareTable"></div>
   </section>
 
-  <section id="sec4" class="tab-section">
+  <section id="sec4" class="tab-section" hidden>
     <div class="section-head"><span class="section-num">4</span><h2>당월 특이사항 및 원인</h2></div>
     <p class="section-sub">노무비·경비 소분류를 통합해서 봅니다 (매출 상세내역·판관비·영업외비용 제외).</p>
 
@@ -349,20 +354,33 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
   </section>
 
   <section id="sec5" class="tab-section" hidden>
-    <div class="section-head"><span class="section-num">5</span><h2>가운 매출</h2></div>
-    <p class="section-sub">렌탈가운_멸균 · 렌탈가운_비멸균 · 렌탈 멸균 프로텍트커버 매출만 별도로 추적합니다 (원본 장부 G열 상세내역 기준, 인천세종병원·부천세종병원 합산).</p>
+    <div class="section-head"><span class="section-num">5</span><h2>세탁 &amp; 가운 매출</h2></div>
+    <p class="section-sub">좌측: 일반세탁물 매출(부천·인천세종병원은 일반세탁물만, 파주·일산중심재활·뉴고려병원은 매출 전체). 우측: 렌탈가운_멸균 · 렌탈가운_비멸균 · 렌탈 멸균 프로텍트커버 매출(인천세종병원·부천세종병원 합산).</p>
 
-    <div class="card" id="gownSnapshot" style="margin-bottom:20px;"></div>
-
-    <div class="card" style="margin-bottom:16px;">
-      <h3 style="font-size:13px;margin:0 0 8px;">월별 가운 매출 추이</h3>
-      <div class="chart-scroll"><svg id="chartGown" width="1020" height="240"></svg></div>
-      <div class="legend" id="legGown"></div>
+    <div class="chart-row" style="margin-bottom:16px;">
+      <div class="card" id="laundrySnapshot"></div>
+      <div class="card" id="gownSnapshot"></div>
     </div>
 
-    <div class="card" id="gownTable" style="margin-bottom:20px;"></div>
+    <div class="chart-row" style="margin-bottom:16px;">
+      <div class="card">
+        <h3 style="font-size:13px;margin:0 0 8px;">월별 세탁 매출 추이</h3>
+        <div class="chart-scroll"><svg id="chartLaundry" width="500" height="230"></svg></div>
+        <div class="legend" id="legLaundry"></div>
+      </div>
+      <div class="card">
+        <h3 style="font-size:13px;margin:0 0 8px;">월별 가운 매출 추이</h3>
+        <div class="chart-scroll"><svg id="chartGown" width="500" height="230"></svg></div>
+        <div class="legend" id="legGown"></div>
+      </div>
+    </div>
 
-    <p class="section-sub" style="margin:20px 0 10px;">상단 기준월 선택에 따라 아래 병원별 구성이 함께 바뀝니다.</p>
+    <div class="chart-row" style="margin-bottom:20px;">
+      <div class="card" id="laundryQuarterTable"></div>
+      <div class="card" id="gownTable"></div>
+    </div>
+
+    <p class="section-sub" style="margin:20px 0 10px;">상단 기준월 선택에 따라 아래 병원별 가운 매출 구성이 함께 바뀝니다.</p>
     <div class="midcat-grid" id="gownVendorGrid"></div>
   </section>
 
@@ -377,6 +395,7 @@ let DATA = null;
 let DETAIL_DATA = null;
 
 let GOWN_DATA = null;
+let LAUNDRY_DATA = null;
 const GOWN_ITEM_NAMES = ["렌탈가운_멸균","렌탈가운_비멸균","렌탈 멸균 프로텍트커버"];
 const GOWN_ITEM_COLORS = {"렌탈가운_멸균":"var(--s5)","렌탈가운_비멸균":"var(--s6)","렌탈 멸균 프로텍트커버":"var(--s7)"};
 
@@ -413,11 +432,32 @@ function fmtPP(v, d){
 // last index with nonzero revenue = last real actual month (auto-detected, per CLAUDE.md guidance)
 let ACTUAL_CUTOFF_IDX;
 let refIdx;
-let activeTab = 'sec4';
+let activeTab = 'sec1';
 
 // ratio-to-revenue for metrics that don't already have a precomputed ratio array
 // (노무비/경비 reuse DATA.laborRatio / DATA.midcatRatio['경비'])
 let NET_INCOME_RATIO, GROSS_PROFIT_RATIO, OPINCOME_NEW_RATIO;
+
+// 관공서의 공휴일에 관한 규정 기준 법정공휴일 + 대체공휴일 + 2025년 1/27 임시공휴일.
+// 근로자의 날(5/1)은 관공서 공휴일이 아니라 제외 - "국공일만 제외" 기준에 맞춤.
+const KR_HOLIDAYS = new Set([
+  '2025-01-01','2025-01-27','2025-01-28','2025-01-29','2025-01-30',
+  '2025-03-01','2025-03-03','2025-05-05','2025-05-06','2025-06-06',
+  '2025-08-15','2025-10-03','2025-10-05','2025-10-06','2025-10-07','2025-10-08','2025-10-09','2025-12-25',
+  '2026-01-01','2026-02-16','2026-02-17','2026-02-18','2026-03-01','2026-03-02',
+  '2026-05-05','2026-05-24','2026-05-25','2026-06-06','2026-08-15','2026-08-17',
+  '2026-09-24','2026-09-25','2026-09-26','2026-10-03','2026-10-05','2026-10-09','2026-12-25',
+]);
+// "매일 운영, 국공휴일만 제외" 기준 - 병원 대상 서비스라 주말에도 운영하므로 토/일은 뺴지 않는다.
+function businessDaysInMonth(year, month){
+  const daysInMonth = new Date(year, month, 0).getDate();
+  let count = 0;
+  for (let d = 1; d <= daysInMonth; d++){
+    const iso = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if (!KR_HOLIDAYS.has(iso)) count++;
+  }
+  return count;
+}
 
 function monthLabelFull(idx){
   const m = DATA.months[idx];
@@ -524,6 +564,7 @@ function switchTab(tab){
 function renderTabContent(tab){
   if (tab === 'sec1'){
     renderKPI();
+    renderQuarterlyTable();
     renderSec1Charts();
     renderTrendMini();
   } else if (tab === 'sec2'){
@@ -538,6 +579,9 @@ function renderTabContent(tab){
     renderAnomalyTop3();
     renderCauseAnalysis();
   } else if (tab === 'sec5'){
+    renderLaundrySnapshot();
+    renderLaundryChart();
+    renderLaundryQuarterlyTable();
     renderGownSnapshot();
     renderGownChart();
     renderGownTable();
@@ -579,10 +623,17 @@ function renderSnapshot(){
   const revMom = pctChange(revV, revPrev);
   const revYprev = refIdx >= 12 ? DATA.revenue[refIdx-12] : null;
   const revYoy = pctChange(revV, revYprev);
+  const refMonth = DATA.months[refIdx];
+  const bizDays = businessDaysInMonth(refMonth.year, refMonth.month);
   const topHtml = `<div class="snap-metric">
       <div class="label">매출액</div>
       <div class="value">${fmtWon(revV)}</div>
       <div class="deltas">${deltaBadge(revMom,'전월 ')}${deltaBadge(revYoy,'전년 ')}</div>
+    </div>
+    <div class="snap-metric bizdays">
+      <div class="label">당월 영업일수</div>
+      <div class="value">${bizDays}일</div>
+      <div class="deltas"><span class="delta-badge flat">주말 포함, 국공휴일 제외</span></div>
     </div>`;
 
   const metrics = [
@@ -741,6 +792,56 @@ function renderLegend(elId, items){
   document.getElementById(elId).innerHTML = items.map(it =>
     `<span><span class="dot" style="background:${it.color}"></span>${it.name}</span>`).join('') +
     `<span><span class="dot mark"></span>기준월</span>`;
+}
+
+// ---------- section 1: 분기별 매출액 & 매출총이익 (25년 대비) ----------
+// 26년이 아직 진행 중인 분기는 실적이 입력된 달까지만 합산하고, YoY는 25년의 같은 개월
+// 수만 비교한다 (예: 26년 3분기가 7~8월만 있으면 25년도 7~8월만 더해서 비교) - 그래야
+// 아직 안 지난 달의 매출 0이 섞여 증감률이 왜곡되지 않는다.
+function renderQuarterlyTable(){
+  const sumRange = (arr, start, count) => {
+    let s = 0;
+    for (let i = 0; i < count; i++) s += (arr[start+i] || 0);
+    return s;
+  };
+  const rows = [0,1,2,3].map(q => {
+    const start25 = q*3, start26 = 12+q*3;
+    const actualMonths26 = Math.max(0, Math.min(3, ACTUAL_CUTOFF_IDX - start26 + 1));
+    const rev25 = sumRange(DATA.revenue, start25, 3);
+    const gp25 = sumRange(DATA.grossProfit, start25, 3);
+    const rev26 = actualMonths26 > 0 ? sumRange(DATA.revenue, start26, actualMonths26) : null;
+    const gp26 = actualMonths26 > 0 ? sumRange(DATA.grossProfit, start26, actualMonths26) : null;
+    const rev25Comp = actualMonths26 > 0 ? sumRange(DATA.revenue, start25, actualMonths26) : null;
+    const gp25Comp = actualMonths26 > 0 ? sumRange(DATA.grossProfit, start25, actualMonths26) : null;
+    return {
+      q: q+1, partial: actualMonths26 > 0 && actualMonths26 < 3, actualMonths26,
+      rev25, gp25, rev26, gp26,
+      revYoy: pctChange(rev26, rev25Comp), gpYoy: pctChange(gp26, gp25Comp),
+    };
+  });
+
+  const trs = rows.map(r => {
+    const qLabel = `${r.q}분기` + (r.partial ? ` <span class="anomaly-group" style="margin-left:4px;">${r.actualMonths26}개월 누적</span>` : '');
+    return `<tr>
+      <td>${qLabel}</td>
+      <td>${fmtWon(r.rev25)}</td>
+      <td>${fmtWon(r.rev26)}</td>
+      <td>${deltaBadge(r.revYoy,'')}</td>
+      <td>${fmtWon(r.gp25)}</td>
+      <td>${fmtWon(r.gp26)}</td>
+      <td>${deltaBadge(r.gpYoy,'')}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('quarterlyTable').innerHTML = `
+    <h3 style="font-size:13px;margin:0 0 10px;">분기별 매출액 &amp; 매출총이익 (25년 대비)</h3>
+    <div class="chart-scroll"><table class="compare-table">
+      <thead><tr>
+        <th>분기</th><th>25년 매출액</th><th>26년 매출액</th><th>YoY</th><th>25년 매출총이익</th><th>26년 매출총이익</th><th>YoY</th>
+      </tr></thead>
+      <tbody>${trs}</tbody>
+    </table></div>
+    <p class="note" style="margin-top:8px;">※ 26년 진행 중인 분기는 실적이 입력된 달까지만 합산하고, YoY(전년비)는 25년의 같은 개월 수만 비교합니다.</p>`;
 }
 
 // ---------- section 1 charts ----------
@@ -1260,8 +1361,79 @@ function renderGownSnapshot(){
     </div>`;
   }).join('');
   document.getElementById('gownSnapshot').innerHTML =
-    `<div class="snapshot-rest">${html}</div>
+    `<h3 style="font-size:13px;margin:0 0 10px;">가운 매출</h3>
+    <div class="snapshot-rest compact">${html}</div>
     <p class="snapshot-note">※ 기준월(${monthLabelFull(refIdx)}) 기준, 인천세종병원·부천세종병원 매출 합산액입니다.</p>`;
+}
+
+// ---------- tab 5: 세탁 매출 (일반세탁물 - 부천/인천세종병원은 일반세탁물만, 나머지 3개
+// 병원은 매출 전체가 일반세탁물뿐이라 그대로 사용) ----------
+const LAUNDRY_VENDORS = ["부천세종병원","인천세종병원","파주병원","일산중심재활병원","뉴고려병원"];
+const LAUNDRY_VENDOR_COLORS = {
+  "부천세종병원":"var(--s1)","인천세종병원":"var(--s3)","파주병원":"var(--s4)",
+  "일산중심재활병원":"var(--s6)","뉴고려병원":"var(--s8)",
+};
+
+function renderLaundrySnapshot(){
+  const rows = LAUNDRY_VENDORS.map(name => ({label:name, arr: LAUNDRY_DATA.items[name]}));
+  rows.push({label:'세탁 매출 합계', arr: LAUNDRY_DATA.total});
+  const html = rows.map(r => {
+    const v = r.arr[refIdx];
+    const prev = refIdx > 0 ? r.arr[refIdx-1] : null;
+    const yprev = refIdx >= 12 ? r.arr[refIdx-12] : null;
+    const mom = pctChange(v, prev);
+    const yoy = pctChange(v, yprev);
+    return `<div class="snap-metric">
+      <div class="label">${r.label}</div>
+      <div class="value">${fmtWon(v)}</div>
+      <div class="deltas">${deltaBadge(mom,'전월 ')}${deltaBadge(yoy,'전년 ')}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('laundrySnapshot').innerHTML =
+    `<h3 style="font-size:13px;margin:0 0 10px;">세탁 매출</h3>
+    <div class="snapshot-rest compact">${html}</div>
+    <p class="snapshot-note">※ 기준월(${monthLabelFull(refIdx)}) 기준, 병원별 일반세탁물 매출입니다.</p>`;
+}
+
+function renderLaundryChart(){
+  const n = ACTUAL_CUTOFF_IDX + 1;
+  const labels = buildMonthLabels(n);
+  const series = LAUNDRY_VENDORS.map(name => ({name, color: LAUNDRY_VENDOR_COLORS[name], data: LAUNDRY_DATA.items[name].slice(0,n)}));
+  series.push({name:'세탁 매출 합계', color:'var(--s2)', data: LAUNDRY_DATA.total.slice(0,n)});
+  drawLineChart('chartLaundry', series, labels, {padL:64, highlightIdx: refIdx});
+  renderLegend('legLaundry', series.map(s => ({name:s.name, color:s.color})));
+}
+
+// 25년 대비 로직은 renderQuarterlyTable과 동일 - 26년 진행 중인 분기는 실적 있는 달까지만.
+function renderLaundryQuarterlyTable(){
+  const sumRange = (arr, start, count) => {
+    let s = 0;
+    for (let i = 0; i < count; i++) s += (arr[start+i] || 0);
+    return s;
+  };
+  const rows = [0,1,2,3].map(q => {
+    const start25 = q*3, start26 = 12+q*3;
+    const actualMonths26 = Math.max(0, Math.min(3, ACTUAL_CUTOFF_IDX - start26 + 1));
+    const total25 = sumRange(LAUNDRY_DATA.total, start25, 3);
+    const total26 = actualMonths26 > 0 ? sumRange(LAUNDRY_DATA.total, start26, actualMonths26) : null;
+    const total25Comp = actualMonths26 > 0 ? sumRange(LAUNDRY_DATA.total, start25, actualMonths26) : null;
+    return {q: q+1, partial: actualMonths26 > 0 && actualMonths26 < 3, actualMonths26, total25, total26, yoy: pctChange(total26, total25Comp)};
+  });
+  const trs = rows.map(r => {
+    const qLabel = `${r.q}분기` + (r.partial ? ` <span class="anomaly-group" style="margin-left:4px;">${r.actualMonths26}개월 누적</span>` : '');
+    return `<tr>
+      <td>${qLabel}</td>
+      <td>${fmtWon(r.total25)}</td>
+      <td>${fmtWon(r.total26)}</td>
+      <td>${deltaBadge(r.yoy,'')}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('laundryQuarterTable').innerHTML = `
+    <h3 style="font-size:13px;margin:0 0 10px;">분기별 세탁 매출 (25년 대비)</h3>
+    <div class="chart-scroll"><table class="compare-table">
+      <thead><tr><th>분기</th><th>25년</th><th>26년</th><th>YoY</th></tr></thead>
+      <tbody>${trs}</tbody>
+    </table></div>`;
 }
 
 function renderGownChart(){
@@ -1493,6 +1665,22 @@ function transformToData(lineItems, summaryMetrics){
   const gownTotal = new Array(n).fill(0);
   GOWN_ITEM_NAMES_LOCAL.forEach(nm => gownItems[nm].forEach((v,i) => { gownTotal[i] += v; }));
 
+  // laundry revenue tracking (tab 5, left side) - 부천/인천세종병원은 일반세탁물 상세내역만
+  // 골라내고, 나머지 3개 병원은 매출 자체가 일반세탁물뿐이라 그 거래처의 매출 전체를 쓴다.
+  const LAUNDRY_VENDORS_LOCAL = ["부천세종병원","인천세종병원","파주병원","일산중심재활병원","뉴고려병원"];
+  const FILTER_BY_DETAIL_VENDORS = new Set(["부천세종병원","인천세종병원"]);
+  const laundryItems = {};
+  LAUNDRY_VENDORS_LOCAL.forEach(v => { laundryItems[v] = new Array(n).fill(0); });
+  rawItems.forEach(r => {
+    if (!LAUNDRY_VENDORS_LOCAL.includes(r.counterparty)) return;
+    if (FILTER_BY_DETAIL_VENDORS.has(r.counterparty) && norm(r.detail) !== '일반세탁물') return;
+    const i = idxOf(r.year, r.month);
+    if (i < 0) return;
+    laundryItems[r.counterparty][i] += (r.amount || 0);
+  });
+  const laundryTotal = new Array(n).fill(0);
+  LAUNDRY_VENDORS_LOCAL.forEach(v => laundryItems[v].forEach((val,i) => { laundryTotal[i] += val; }));
+
   return {
     DATA: {
       months, revenue, netIncome, opIncome, grossProfit, opIncomeNew, cogsExDep, opIncomeExDep, netIncomeExDep,
@@ -1500,6 +1688,7 @@ function transformToData(lineItems, summaryMetrics){
     },
     DETAIL_DATA,
     GOWN_DATA: {items: gownItems, total: gownTotal, byVendor: gownByVendor},
+    LAUNDRY_DATA: {items: laundryItems, total: laundryTotal},
   };
 }
 
@@ -1543,7 +1732,7 @@ async function loadAndRender(){
   try {
     const data = await apiCall('get-pnl-data', {token: getToken()});
     const built = transformToData(data.lineItems, data.summaryMetrics);
-    DATA = built.DATA; DETAIL_DATA = built.DETAIL_DATA; GOWN_DATA = built.GOWN_DATA;
+    DATA = built.DATA; DETAIL_DATA = built.DETAIL_DATA; GOWN_DATA = built.GOWN_DATA; LAUNDRY_DATA = built.LAUNDRY_DATA;
     computeDerived();
     app.classList.remove('loading');
     hideGate();
