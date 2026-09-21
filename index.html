@@ -420,9 +420,7 @@ let activeTab = 'sec4';
 
 // ratio-to-revenue for metrics that don't already have a precomputed ratio array
 // (노무비/경비 reuse DATA.laborRatio / DATA.midcatRatio['경비'])
-let NET_INCOME_RATIO, OPINCOME_EXDEP_RATIO, OPINCOME_RATIO;
-// 감가상각비 합계액 (경비 소분류 "감가상각비합계") - 스냅샷의 "경비(감가상각비 미포함)"/"경비 (감가상각비)" 두 지표가 공유
-let DEPRECIATION, EXPENSE_EXDEP, EXPENSE_EXDEP_RATIO, DEPRECIATION_RATIO;
+let NET_INCOME_RATIO, OPINCOME_EXDEP_RATIO, GROSS_PROFIT_RATIO, OPINCOME_NEW_RATIO;
 
 function monthLabelFull(idx){
   const m = DATA.months[idx];
@@ -483,11 +481,8 @@ function computeDerived(){
   refIdx = ACTUAL_CUTOFF_IDX;
   NET_INCOME_RATIO = DATA.netIncome.map((v,i) => (v==null || !DATA.revenue[i]) ? null : v/DATA.revenue[i]);
   OPINCOME_EXDEP_RATIO = DATA.opIncomeExDep.map((v,i) => (v==null || !DATA.revenue[i]) ? null : v/DATA.revenue[i]);
-  OPINCOME_RATIO = DATA.opIncome.map((v,i) => (v==null || !DATA.revenue[i]) ? null : v/DATA.revenue[i]);
-  DEPRECIATION = (DATA.subcatDetail['경비'] && DATA.subcatDetail['경비']['감가상각비합계']) || DATA.months.map(()=>null);
-  EXPENSE_EXDEP = DATA.midcatTotals['경비'].map((v,i) => (v==null || DEPRECIATION[i]==null) ? null : v - DEPRECIATION[i]);
-  EXPENSE_EXDEP_RATIO = EXPENSE_EXDEP.map((v,i) => (v==null || !DATA.revenue[i]) ? null : v/DATA.revenue[i]);
-  DEPRECIATION_RATIO = DEPRECIATION.map((v,i) => (v==null || !DATA.revenue[i]) ? null : v/DATA.revenue[i]);
+  GROSS_PROFIT_RATIO = DATA.grossProfit.map((v,i) => (v==null || !DATA.revenue[i]) ? null : v/DATA.revenue[i]);
+  OPINCOME_NEW_RATIO = DATA.opIncomeNew.map((v,i) => (v==null || !DATA.revenue[i]) ? null : v/DATA.revenue[i]);
   EXP_ITEMS = buildSubcatItems('경비');
   selectedExpenseItems = new Set(
     ['복리후생비','통신비','수도광열비'].filter(n => EXP_ITEMS.some(it => it.name === n))
@@ -595,10 +590,10 @@ function renderSnapshot(){
     </div>`;
 
   const metrics = [
-    {label:'영업이익 (감가상각비 포함)', arr: DATA.opIncome, ratio: OPINCOME_RATIO},
+    {label:'매출총이익', arr: DATA.grossProfit, ratio: GROSS_PROFIT_RATIO},
     {label:'노무비', arr: DATA.laborCost, ratio: DATA.laborRatio},
-    {label:'경비(감가상각비 미포함)', arr: EXPENSE_EXDEP, ratio: EXPENSE_EXDEP_RATIO},
-    {label:'경비 (감가상각비)', arr: DEPRECIATION, ratio: DEPRECIATION_RATIO},
+    {label:'경비', arr: DATA.midcatTotals['경비'], ratio: DATA.midcatRatio['경비']},
+    {label:'영업이익', arr: DATA.opIncomeNew, ratio: OPINCOME_NEW_RATIO},
   ];
   const restHtml = metrics.map(m => {
     const v = m.arr[refIdx];
@@ -617,7 +612,7 @@ function renderSnapshot(){
   document.getElementById('snapshotCard').innerHTML =
     `<div class="snapshot-top">${topHtml}</div>` +
     `<div class="snapshot-rest">${restHtml}</div>` +
-    `<p class="snapshot-note">※ 매출액은 금액 증감률, 나머지 4개 항목(영업이익·노무비·경비(감가상각비 미포함)·경비(감가상각비))은 매출액 대비 비중의 전월/전년 대비 변화(%p) 기준입니다.</p>`;
+    `<p class="snapshot-note">※ 매출액은 금액 증감률, 나머지 4개 항목(매출총이익·노무비·경비·영업이익)은 매출액 대비 비중의 전월/전년 대비 변화(%p) 기준입니다. 매출총이익·영업이익은 2026년 8월 결산부터 새로 도입된 항목으로, 25년 데이터는 매출총이익 자리에 기존 방식(매출원가 차감 후) 수치가 표시되고 영업이익은 아직 집계되지 않습니다(-).</p>`;
 }
 
 // ---------- generic line chart ----------
@@ -947,20 +942,20 @@ function renderKPI(){
   const refMonth = DATA.months[refIdx].month;
   const ys = yearStartIdx(refYear);
   const ytdRev = DATA.revenue.slice(ys, refIdx+1).reduce((a,b)=>a+b,0);
-  const ytdNI = DATA.netIncome.slice(ys, refIdx+1).reduce((a,b)=>a+b,0);
+  const ytdOI = DATA.opIncomeNew.slice(ys, refIdx+1).reduce((a,b)=>a+(b||0),0);
   const lastRev = DATA.revenue[refIdx] || 0;
-  const lastNI = DATA.netIncome[refIdx] || 0;
+  const lastOI = DATA.opIncomeNew[refIdx] || 0;
   const remaining = 12 - refMonth;
   const projRev = ytdRev + remaining * lastRev;
-  const projNI = ytdNI + remaining * lastNI;
+  const projOI = ytdOI + remaining * lastOI;
 
   const actualItems = [
     {label: '누적 매출', value: fmtWon(ytdRev), cls:""},
-    {label: '누적 당기순이익', value: fmtWon(ytdNI), cls: ytdNI>=0?"pos":"neg"},
+    {label: '누적 영업이익', value: fmtWon(ytdOI), cls: ytdOI>=0?"pos":"neg"},
   ];
   const projItems = [
     {label: remaining>0 ? '예상 매출' : '연간 매출 합계', value: fmtWon(projRev), cls:""},
-    {label: remaining>0 ? '예상 당기순이익' : '연간 당기순이익 합계', value: fmtWon(projNI), cls: projNI>=0?"pos":"neg"},
+    {label: remaining>0 ? '예상 영업이익' : '연간 영업이익 합계', value: fmtWon(projOI), cls: projOI>=0?"pos":"neg"},
   ];
   const kpiHtml = items => items.map(it => `
       <div class="kpi">
@@ -1416,7 +1411,17 @@ function transformToData(lineItems, summaryMetrics){
   months.forEach((mm,i) => { mm.isActual = !!revenue[i]; });
 
   const netIncome = metricArr(k => k === '당기순이익');
+  // 2026-09 template change: the old '영업이익' row (COGS-only, no SG&A deducted) was
+  // renamed '매출총이익', and a genuine post-SG&A '영업이익' row was added. 25년 data
+  // still uses the old template (no '매출총이익' row at all), so `grossProfit` is null
+  // there and `opIncome` below still means the old concept for those months - which is
+  // exactly what we want to keep showing under the "매출총이익" label for 25년.
+  const grossProfitNew = metricArr(k => k === '매출총이익', true);
   const opIncome = metricArr(k => k === '영업이익');
+  const grossProfit = grossProfitNew.map((gp,i) => gp != null ? gp : opIncome[i]);
+  // only trust '영업이익' as the new post-SG&A figure for months where '매출총이익'
+  // confirms the new template applies - otherwise it's the old (COGS-only) meaning.
+  const opIncomeNew = grossProfitNew.map((gp,i) => gp != null ? opIncome[i] : null);
   const cogsExDep = metricArr(k => k.includes('서비스매출원가') && k.includes('미포함'), true);
   const opIncomeExDep = metricArr(k => k === '영업이익(감가상각비미포함)', true);
   const netIncomeExDep = metricArr(k => k === '당기순이익(감가상각비미포함)', true);
@@ -1500,7 +1505,7 @@ function transformToData(lineItems, summaryMetrics){
 
   return {
     DATA: {
-      months, revenue, netIncome, opIncome, cogsExDep, opIncomeExDep, netIncomeExDep,
+      months, revenue, netIncome, opIncome, grossProfit, opIncomeNew, cogsExDep, opIncomeExDep, netIncomeExDep,
       laborCost, laborRatio, utilitiesCost, utilitiesRatio, midcatTotals, midcatRatio, subcatDetail,
     },
     DETAIL_DATA,

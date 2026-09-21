@@ -58,22 +58,38 @@ function rowCount(ws: XLSX.WorkSheet): number {
 
 export function parsePnlWorkbook(bytes: Uint8Array): ParseResult {
   const wb = XLSX.read(bytes, { type: "array", cellDates: false });
-  const ws = wb.Sheets[wb.SheetNames[0]];
-  const maxCol = colCount(ws);
-  const maxRow = rowCount(ws);
 
-  // locate header row (first row containing normalized "대분류")
+  // The P&L table isn't always the first sheet -- some workbooks bundle it alongside
+  // unrelated tabs (법인카드, 감가상각 상세, a 계정과목 glossary sheet that mentions
+  // "대분류" without actually having the data table, etc). Search every sheet's top
+  // rows for a header row that has BOTH "대분류" AND at least one "N월" column --
+  // the glossary sheet has the former without the latter, so this disambiguates.
+  let ws: XLSX.WorkSheet | null = null;
   let headerRow: number | null = null;
-  for (let r = 1; r <= Math.min(10, maxRow); r++) {
-    for (let c = 1; c <= maxCol; c++) {
-      if (norm(cellAt(ws, r, c)) === "대분류") {
+  for (const sheetName of wb.SheetNames) {
+    const candidate = wb.Sheets[sheetName];
+    const candidateMaxRow = rowCount(candidate);
+    const candidateMaxCol = colCount(candidate);
+    for (let r = 1; r <= Math.min(10, candidateMaxRow); r++) {
+      let hasCategory = false;
+      let hasMonth = false;
+      for (let c = 1; c <= candidateMaxCol; c++) {
+        const cellNorm = norm(cellAt(candidate, r, c));
+        if (cellNorm === "대분류") hasCategory = true;
+        if (MONTH_RE.test(cellNorm)) hasMonth = true;
+      }
+      if (hasCategory && hasMonth) {
+        ws = candidate;
         headerRow = r;
         break;
       }
     }
-    if (headerRow) break;
+    if (ws) break;
   }
-  if (!headerRow) throw new Error("헤더 행(대분류)을 찾지 못했습니다");
+  if (!ws || !headerRow) throw new Error("헤더 행(대분류 + 월별 열)을 찾지 못했습니다 (모든 시트 확인함)");
+
+  const maxCol = colCount(ws);
+  const maxRow = rowCount(ws);
 
   // detected fiscal year from the banner rows above the header (e.g. "2026년 (귀속월 기준)")
   let detectedYear: string | null = null;
