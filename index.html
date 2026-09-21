@@ -280,20 +280,15 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
 
   <section id="sec1" class="tab-section" hidden>
     <div class="section-head"><span class="section-num">1</span><h2>매출 &amp; 손익 추이</h2></div>
-    <p class="section-sub">매출액(27행 기준) · 당기순이익 · 감가상각비 제외 지표</p>
+    <p class="section-sub">매출액 · 영업이익 · 당기순이익 (감가상각비 포함/제외)</p>
 
     <div class="kpi-groups" id="kpiRow"></div>
 
     <div class="chart-row">
-      <div class="card">
-        <h3 style="font-size:13px;margin:0 0 8px;">월별 매출액 &amp; 당기순이익</h3>
-        <div class="chart-scroll"><svg id="chartRevNI" width="500" height="230"></svg></div>
+      <div class="card" style="grid-column:1 / -1;">
+        <h3 style="font-size:13px;margin:0 0 8px;">월별 매출액 &amp; 영업이익·당기순이익 (감가상각비 포함/제외)</h3>
+        <div class="chart-scroll"><svg id="chartRevNI" width="1020" height="260"></svg></div>
         <div class="legend" id="legRevNI"></div>
-      </div>
-      <div class="card">
-        <h3 style="font-size:13px;margin:0 0 8px;">감가상각비 제외 지표 (26년, 원 단위)</h3>
-        <div class="chart-scroll"><svg id="chartDep" width="500" height="230"></svg></div>
-        <div class="legend" id="legDep"></div>
       </div>
     </div>
 
@@ -422,7 +417,9 @@ let activeTab = 'sec4';
 
 // ratio-to-revenue for metrics that don't already have a precomputed ratio array
 // (노무비/경비 reuse DATA.laborRatio / DATA.midcatRatio['경비'])
-let NET_INCOME_RATIO, OPINCOME_EXDEP_RATIO, GROSS_PROFIT_RATIO, OPINCOME_NEW_RATIO;
+let NET_INCOME_RATIO, GROSS_PROFIT_RATIO, OPINCOME_NEW_RATIO;
+// 감가상각비 합계액 (경비 소분류 "감가상각비합계") - 감가상각비 제외 지표 계산에 사용
+let DEPRECIATION;
 
 function monthLabelFull(idx){
   const m = DATA.months[idx];
@@ -482,9 +479,9 @@ function computeDerived(){
   })();
   refIdx = ACTUAL_CUTOFF_IDX;
   NET_INCOME_RATIO = DATA.netIncome.map((v,i) => (v==null || !DATA.revenue[i]) ? null : v/DATA.revenue[i]);
-  OPINCOME_EXDEP_RATIO = DATA.opIncomeExDep.map((v,i) => (v==null || !DATA.revenue[i]) ? null : v/DATA.revenue[i]);
   GROSS_PROFIT_RATIO = DATA.grossProfit.map((v,i) => (v==null || !DATA.revenue[i]) ? null : v/DATA.revenue[i]);
   OPINCOME_NEW_RATIO = DATA.opIncomeNew.map((v,i) => (v==null || !DATA.revenue[i]) ? null : v/DATA.revenue[i]);
+  DEPRECIATION = (DATA.subcatDetail['경비'] && DATA.subcatDetail['경비']['감가상각비합계']) || DATA.months.map(()=>null);
   EXP_ITEMS = buildSubcatItems('경비');
   selectedExpenseItems = new Set(
     ['복리후생비','통신비','수도광열비'].filter(n => EXP_ITEMS.some(it => it.name === n))
@@ -750,29 +747,24 @@ function renderLegend(elId, items){
 }
 
 // ---------- section 1 charts ----------
+// 영업이익/당기순이익 감가상각비 제외 버전은 원본 파일의 "(감가상각비 미포함)" 행을 쓰지
+// 않고 직접 계산한다 - 그 행들은 2026-09 템플릿 개편(매출총이익/영업이익 분리) 이전 기준으로
+// 계산된 값이라 새 영업이익 정의와 안 맞을 수 있어서, 새 지표 + 월 감가상각비로 다시 구한다.
 function renderSec1Charts(){
   const n = ACTUAL_CUTOFF_IDX + 1;
   const labels = buildMonthLabels(n);
+  const opIncomeExDepNew = DATA.opIncomeNew.map((v,i) => (v==null || DEPRECIATION[i]==null) ? null : v + DEPRECIATION[i]);
+  const netIncomeExDepNew = DATA.netIncome.map((v,i) => (v==null || DEPRECIATION[i]==null) ? null : v + DEPRECIATION[i]);
 
-  drawLineChart('chartRevNI', [
+  const series = [
     {name:'매출액', color:'var(--s1)', data: DATA.revenue.slice(0,n)},
-    {name:'당기순이익', color:'var(--s2)', data: DATA.netIncome.slice(0,n)},
-  ], labels, {moneyAxis:true, highlightIdx: refIdx});
-  renderLegend('legRevNI', [{name:'매출액', color:'var(--s1)'},{name:'당기순이익', color:'var(--s2)'}]);
-
-  // dep-ex chart: only 2026 portion (index 12..n)
-  const depLabels = labels.slice(12);
-  const depHighlight = refIdx >= 12 ? refIdx - 12 : null;
-  drawLineChart('chartDep', [
-    {name:'서비스매출원가(감가상각비 미포함)', color:'var(--s1)', data: DATA.cogsExDep.slice(12,n)},
-    {name:'영업이익(감가상각비 미포함)', color:'var(--s2)', data: DATA.opIncomeExDep.slice(12,n)},
-    {name:'당기순이익(감가상각비 미포함)', color:'var(--s3)', data: DATA.netIncomeExDep.slice(12,n)},
-  ], depLabels, {moneyAxis:true, highlightIdx: depHighlight});
-  renderLegend('legDep', [
-    {name:'서비스매출원가(ex-Dep)', color:'var(--s1)'},
-    {name:'영업이익(ex-Dep)', color:'var(--s2)'},
-    {name:'당기순이익(ex-Dep)', color:'var(--s3)'},
-  ]);
+    {name:'영업이익', color:'var(--s2)', data: DATA.opIncomeNew.slice(0,n)},
+    {name:'영업이익(감가상각비 제외)', color:'var(--s3)', data: opIncomeExDepNew.slice(0,n)},
+    {name:'당기순이익', color:'var(--s5)', data: DATA.netIncome.slice(0,n)},
+    {name:'당기순이익(감가상각비 제외)', color:'var(--s7)', data: netIncomeExDepNew.slice(0,n)},
+  ];
+  drawLineChart('chartRevNI', series, labels, {moneyAxis:true, highlightIdx: refIdx});
+  renderLegend('legRevNI', series.map(({name,color}) => ({name,color})));
 }
 
 // ---------- section 2: 매출액 대비 노무비/수도광열비 비율 (원래 탭1 하단에 있었음) ----------
