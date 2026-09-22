@@ -209,6 +209,13 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
 .cause-tag.new{background:color-mix(in srgb, var(--bad) 16%, transparent); color:var(--bad);}
 .cause-tag.gone{background:var(--surface-2); color:var(--text-muted);}
 .note-box textarea{width:100%; min-height:64px; resize:vertical; background:var(--surface); color:var(--text-primary); border:1px solid var(--border); border-radius:8px; padding:9px 11px; font-size:12.5px; font-family:inherit; box-sizing:border-box;}
+.rich-toolbar{display:flex; align-items:center; gap:6px; margin-bottom:6px;}
+.rt-btn{background:var(--surface-2); border:1px solid var(--border); border-radius:6px; width:26px; height:24px; font-size:12px; font-weight:800; cursor:pointer; color:var(--text-primary); font-family:inherit; line-height:1;}
+.rt-btn:hover{background:var(--surface);}
+.rt-size{background:var(--surface-2); border:1px solid var(--border); border-radius:6px; padding:4px 6px; font-size:11.5px; color:var(--text-primary); font-family:inherit; cursor:pointer;}
+.rich-editor{width:100%; min-height:64px; resize:vertical; overflow:auto; background:var(--surface); color:var(--text-primary); border:1px solid var(--border); border-radius:8px; padding:9px 11px; font-size:12.5px; font-family:inherit; box-sizing:border-box; white-space:pre-wrap; word-break:break-word; line-height:1.5;}
+.rich-editor:focus{outline:none; border-color:var(--s1);}
+.rich-editor:empty:before{content:attr(data-placeholder); color:var(--text-muted); pointer-events:none;}
 #commentInput{min-height:180px;}
 .note-box .note-actions{display:flex; align-items:center; gap:10px; margin-top:6px;}
 .note-btn{background:var(--s1); color:#fff; border:none; border-radius:7px; padding:7px 14px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit;}
@@ -556,6 +563,83 @@ function computeDerived(){
 
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ---------- rich text notes (bold / font size) ----------
+// 메모 칸(종합의견/향후 도입 안건/원인 메모) 3곳이 모두 같은 방식(contenteditable + 굵게·글씨
+// 크기 툴바)을 쓰므로 공용 헬퍼로 뽑아둔다. 저장은 HTML 문자열 그대로 text 컬럼에 넣는다 -
+// 어차피 PIN 아는 팀원끼리만 쓰는 내부 도구라 굳이 별도 rich-text 컬럼을 새로 만들지 않았다.
+const RICH_ALLOWED_TAGS = new Set(['B','STRONG','SPAN','DIV','BR']);
+function sanitizeRichText(html){
+  const wrap = document.createElement('div');
+  wrap.innerHTML = html || '';
+  (function clean(node){
+    [...node.childNodes].forEach(child => {
+      if (child.nodeType === 1){ // element
+        if (!RICH_ALLOWED_TAGS.has(child.tagName)){
+          while (child.firstChild) node.insertBefore(child.firstChild, child);
+          node.removeChild(child);
+          return;
+        }
+        [...child.attributes].forEach(attr => {
+          if (child.tagName === 'SPAN' && attr.name === 'style'){
+            const m = attr.value.match(/font-size:\s*[\d.]+px/i);
+            if (m) child.setAttribute('style', m[0]); else child.removeAttribute('style');
+          } else {
+            child.removeAttribute(attr.name);
+          }
+        });
+        clean(child);
+      } else if (child.nodeType !== 3){ // keep text nodes only, drop comments/etc
+        node.removeChild(child);
+      }
+    });
+  })(wrap);
+  return wrap.innerHTML;
+}
+// 기존에 저장된 값은 순수 텍스트(줄바꿈 포함)라서, 이미 서식 태그가 섞여있는(=새 에디터로
+// 저장된) 값인지 구분해서 처리한다 - 아니면 텍스트 속 "<" 같은 글자가 태그로 오해될 수 있음.
+function plainOrRichToHtml(content){
+  if (!content) return '';
+  const looksRich = /<(b|strong|span|div|br)[\s/>]/i.test(content);
+  if (looksRich) return sanitizeRichText(content);
+  return escapeHtml(content).replace(/\n/g, '<br>');
+}
+function richToolbarHtml(boldId, sizeId){
+  return `<div class="rich-toolbar">
+    <button type="button" class="rt-btn rt-bold" id="${boldId}" title="굵게"><b>B</b></button>
+    <select class="rt-size" id="${sizeId}" title="글씨 크기">
+      <option value="12">작게</option>
+      <option value="14" selected>보통</option>
+      <option value="18">크게</option>
+      <option value="22">아주 크게</option>
+    </select>
+  </div>`;
+}
+function setupRichEditor(editorEl, boldBtnEl, sizeSelEl){
+  boldBtnEl.addEventListener('click', () => {
+    editorEl.focus();
+    document.execCommand('bold');
+  });
+  sizeSelEl.addEventListener('change', () => {
+    editorEl.focus();
+    const px = sizeSelEl.value;
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount || sel.isCollapsed){ sizeSelEl.value = '14'; return; }
+    const range = sel.getRangeAt(0);
+    if (!editorEl.contains(range.commonAncestorContainer)){ sizeSelEl.value = '14'; return; }
+    const span = document.createElement('span');
+    span.style.fontSize = px + 'px';
+    try {
+      span.appendChild(range.extractContents());
+      range.insertNode(span);
+      sel.removeAllRanges();
+      const newRange = document.createRange();
+      newRange.selectNodeContents(span);
+      sel.addRange(newRange);
+    } catch(e) { /* 선택 범위가 태그 경계를 걸치는 등 드문 경우는 그냥 무시 */ }
+    sizeSelEl.value = '14';
+  });
 }
 
 // ---------- reference month selector ----------
@@ -1347,23 +1431,21 @@ function renderMonthlyComment(){
   box.innerHTML = `
     <h3 style="font-size:13px;margin:0 0 8px;">${refLabel} 종합의견</h3>
     <div class="note-box">
-      <textarea id="commentInput" placeholder="이 달 실적에 대한 종합의견을 남겨주세요.">${existing ? escapeHtml(existing.comment) : ''}</textarea>
+      ${richToolbarHtml('commentBold', 'commentSize')}
+      <div id="commentInput" class="rich-editor" contenteditable="true" data-placeholder="이 달 실적에 대한 종합의견을 남겨주세요.">${plainOrRichToHtml(existing && existing.comment)}</div>
       <div class="note-actions">
         <button class="note-btn" id="commentSaveBtn">저장</button>
         <span class="note-status" id="commentStatus">${existing && existing.comment ? '마지막 저장: ' + new Date(existing.updated_at).toLocaleString('ko-KR') : ''}</span>
       </div>
     </div>`;
 
-  // 내용이 길어도 스크롤 없이 한 번에 다 보이도록 입력창 높이를 내용에 맞춰 자동으로 늘린다.
   const commentInput = document.getElementById('commentInput');
-  const autoGrow = () => { commentInput.style.height = 'auto'; commentInput.style.height = (commentInput.scrollHeight + 2) + 'px'; };
-  autoGrow();
-  commentInput.addEventListener('input', autoGrow);
+  setupRichEditor(commentInput, document.getElementById('commentBold'), document.getElementById('commentSize'));
 
   document.getElementById('commentSaveBtn').addEventListener('click', async () => {
     const btn = document.getElementById('commentSaveBtn');
     const status = document.getElementById('commentStatus');
-    const comment = document.getElementById('commentInput').value;
+    const comment = sanitizeRichText(document.getElementById('commentInput').innerHTML);
     btn.disabled = true;
     status.textContent = '저장 중…';
     try {
@@ -1388,7 +1470,8 @@ function renderAgendaNotes(){
   box.innerHTML = `
     <p class="note" style="margin:0 0 8px;">기준월과 상관없이 하나로 유지되는 메모입니다.</p>
     <div class="note-box">
-      <textarea id="agendaInput" placeholder="앞으로 도입하고자 하는 안건을 자유롭게 적어주세요.">${existing ? escapeHtml(existing.content) : ''}</textarea>
+      ${richToolbarHtml('agendaBold', 'agendaSize')}
+      <div id="agendaInput" class="rich-editor" contenteditable="true" style="min-height:180px;" data-placeholder="앞으로 도입하고자 하는 안건을 자유롭게 적어주세요.">${plainOrRichToHtml(existing && existing.content)}</div>
       <div class="note-actions">
         <button class="note-btn" id="agendaSaveBtn">저장</button>
         <span class="note-status" id="agendaStatus">${existing && existing.content ? '마지막 저장: ' + new Date(existing.updated_at).toLocaleString('ko-KR') : ''}</span>
@@ -1396,15 +1479,12 @@ function renderAgendaNotes(){
     </div>`;
 
   const agendaInput = document.getElementById('agendaInput');
-  const autoGrow = () => { agendaInput.style.height = 'auto'; agendaInput.style.height = (agendaInput.scrollHeight + 2) + 'px'; };
-  agendaInput.style.minHeight = '180px';
-  autoGrow();
-  agendaInput.addEventListener('input', autoGrow);
+  setupRichEditor(agendaInput, document.getElementById('agendaBold'), document.getElementById('agendaSize'));
 
   document.getElementById('agendaSaveBtn').addEventListener('click', async () => {
     const btn = document.getElementById('agendaSaveBtn');
     const status = document.getElementById('agendaStatus');
-    const content = document.getElementById('agendaInput').value;
+    const content = sanitizeRichText(document.getElementById('agendaInput').innerHTML);
     btn.disabled = true;
     status.textContent = '저장 중…';
     try {
@@ -1517,7 +1597,8 @@ function renderCauseAnalysis(){
       ${candHtml}
       <div class="note-box" style="margin-top:14px;">
         <p class="cause-sub-head">B. 원인 메모</p>
-        <textarea class="cause-note-input" data-key="${escapeHtml(noteKey)}" placeholder="이 항목의 변동 원인을 적어주세요.">${existingNote ? escapeHtml(existingNote.content) : ''}</textarea>
+        ${richToolbarHtml(`causeBold${i}`, `causeSize${i}`)}
+        <div class="cause-note-input rich-editor" contenteditable="true" style="min-height:90px;" data-key="${escapeHtml(noteKey)}" data-placeholder="이 항목의 변동 원인을 적어주세요.">${plainOrRichToHtml(existingNote && existingNote.content)}</div>
         <div class="note-actions">
           <button class="note-btn cause-note-save">저장</button>
           <span class="note-status cause-note-status">${existingNote && existingNote.content ? '마지막 저장: ' + new Date(existingNote.updated_at).toLocaleString('ko-KR') : ''}</span>
@@ -1526,19 +1607,16 @@ function renderCauseAnalysis(){
     </div>`;
   }).join('');
 
-  el.querySelectorAll('.cause-note-input').forEach(ta => {
-    const grow = () => { ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 2) + 'px'; };
-    ta.style.minHeight = '90px';
-    grow();
-    ta.addEventListener('input', grow);
+  el.querySelectorAll('.cause-note-input').forEach((editor, i) => {
+    setupRichEditor(editor, document.getElementById(`causeBold${i}`), document.getElementById(`causeSize${i}`));
   });
   el.querySelectorAll('.cause-note-save').forEach(btn => {
     btn.addEventListener('click', async () => {
       const box = btn.closest('.note-box');
-      const textarea = box.querySelector('.cause-note-input');
+      const editor = box.querySelector('.cause-note-input');
       const status = box.querySelector('.cause-note-status');
-      const key = textarea.dataset.key;
-      const content = textarea.value;
+      const key = editor.dataset.key;
+      const content = sanitizeRichText(editor.innerHTML);
       btn.disabled = true;
       status.textContent = '저장 중…';
       try {
