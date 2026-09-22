@@ -147,6 +147,11 @@ section{margin-bottom:44px; padding-top:6px;}
 .compare-table td{padding:11px 10px; border-bottom:1px solid var(--border); font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap;}
 .compare-table td:first-child{text-align:left; font-weight:700;}
 .compare-table tr:last-child td{border-bottom:none;}
+.compare-table th.qt-group{text-align:center; font-size:13px; padding:8px 10px;}
+.compare-table th.qt-group.qt-rev{background:color-mix(in srgb, var(--s1) 16%, var(--surface)); color:var(--s1);}
+.compare-table th.qt-group.qt-gp{background:color-mix(in srgb, var(--s2) 16%, var(--surface)); color:var(--s2);}
+.compare-table td.qt-rev-val{font-weight:800; color:var(--s1);}
+.compare-table td.qt-gp-val{font-weight:800; color:var(--s2);}
 .trend-mini-row{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:16px;}
 .mini-card h4{font-size:12px; font-weight:700; color:var(--text-secondary); margin:0 0 8px;}
 .mini-card .mini-value{font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; margin-bottom:2px;}
@@ -275,8 +280,8 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
 
   <div class="tabs" id="tabNav">
     <button class="tab-btn active" data-tab="sec1">매출추이</button>
-    <button class="tab-btn" data-tab="sec4">당월 특이사항 및 원인</button>
-    <button class="tab-btn" data-tab="sec5">가운 매출</button>
+    <button class="tab-btn" data-tab="sec4">당월 특이사항 및 원인분석</button>
+    <button class="tab-btn" data-tab="sec5">매출 세부</button>
     <button class="tab-btn" data-tab="sec2">매출대비 비용</button>
     <button class="tab-btn" data-tab="sec3">경비 항목별 추이</button>
   </div>
@@ -301,7 +306,7 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
   </section>
 
   <section id="sec2" class="tab-section" hidden>
-    <div class="section-head"><span class="section-num">2</span><h2>매출액 대비 중분류 비중 &amp; 월별 세부 구성</h2></div>
+    <div class="section-head"><span class="section-num">4</span><h2>매출액 대비 중분류 비중 &amp; 월별 세부 구성</h2></div>
     <p class="section-sub">중분류: 노무비 · 경비 · 판관비 · 영업외비용 (매출 상세내역 제외)</p>
 
     <div class="chart-row">
@@ -325,7 +330,7 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
   </section>
 
   <section id="sec3" class="tab-section" hidden>
-    <div class="section-head"><span class="section-num">3</span><h2>경비 항목별 추이</h2></div>
+    <div class="section-head"><span class="section-num">5</span><h2>경비 항목별 추이</h2></div>
     <p class="section-sub">경비(중분류) 내 소분류 항목들의 추이와, 기준월 vs 전월 구성 비중을 확인합니다.</p>
 
     <div class="card" style="margin-bottom:16px;">
@@ -340,7 +345,7 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
   </section>
 
   <section id="sec4" class="tab-section" hidden>
-    <div class="section-head"><span class="section-num">4</span><h2>당월 특이사항 및 원인</h2></div>
+    <div class="section-head"><span class="section-num">2</span><h2>당월 특이사항 및 원인분석</h2></div>
     <p class="section-sub">노무비·경비 소분류를 통합해서 봅니다 (매출 상세내역·판관비·영업외비용 제외).</p>
 
     <div class="subsection-head"><span class="subsection-num">1</span><h3>매출액 대비 비중 변동 TOP 3</h3></div>
@@ -354,7 +359,7 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
   </section>
 
   <section id="sec5" class="tab-section" hidden>
-    <div class="section-head"><span class="section-num">5</span><h2>세탁 &amp; 가운 매출</h2></div>
+    <div class="section-head"><span class="section-num">3</span><h2>매출 세부</h2></div>
     <p class="section-sub">좌측: 일반세탁물 매출(부천·인천세종병원은 일반세탁물만, 파주·일산중심재활·뉴고려병원은 매출 전체). 우측: 렌탈가운_멸균 · 렌탈가운_비멸균 · 렌탈 멸균 프로텍트커버 매출(인천세종병원·부천세종병원 합산).</p>
 
     <div class="chart-row" style="margin-bottom:16px;">
@@ -821,14 +826,14 @@ function renderQuarterlyTable(){
   });
 
   const trs = rows.map(r => {
-    const qLabel = `${r.q}분기` + (r.partial ? ` <span class="anomaly-group" style="margin-left:4px;">${r.actualMonths26}개월 누적</span>` : '');
+    const qLabel = `Q${r.q}` + (r.partial ? ` <span class="anomaly-group" style="margin-left:4px;">${r.actualMonths26}개월 누적</span>` : '');
     return `<tr>
       <td>${qLabel}</td>
       <td>${fmtWon(r.rev25)}</td>
-      <td>${fmtWon(r.rev26)}</td>
+      <td class="qt-rev-val">${fmtWon(r.rev26)}</td>
       <td>${deltaBadge(r.revYoy,'')}</td>
       <td>${fmtWon(r.gp25)}</td>
-      <td>${fmtWon(r.gp26)}</td>
+      <td class="qt-gp-val">${fmtWon(r.gp26)}</td>
       <td>${deltaBadge(r.gpYoy,'')}</td>
     </tr>`;
   }).join('');
@@ -836,9 +841,16 @@ function renderQuarterlyTable(){
   document.getElementById('quarterlyTable').innerHTML = `
     <h3 style="font-size:13px;margin:0 0 10px;">분기별 매출액 &amp; 매출총이익 (25년 대비)</h3>
     <div class="chart-scroll"><table class="compare-table">
-      <thead><tr>
-        <th>분기</th><th>25년 매출액</th><th>26년 매출액</th><th>YoY</th><th>25년 매출총이익</th><th>26년 매출총이익</th><th>YoY</th>
-      </tr></thead>
+      <thead>
+        <tr>
+          <th rowspan="2">분기</th>
+          <th colspan="3" class="qt-group qt-rev">매출액</th>
+          <th colspan="3" class="qt-group qt-gp">매출총이익</th>
+        </tr>
+        <tr>
+          <th>25년</th><th>26년</th><th>YoY</th><th>25년</th><th>26년</th><th>YoY</th>
+        </tr>
+      </thead>
       <tbody>${trs}</tbody>
     </table></div>
     <p class="note" style="margin-top:8px;">※ 26년 진행 중인 분기는 실적이 입력된 달까지만 합산하고, YoY(전년비)는 25년의 같은 개월 수만 비교합니다.</p>`;
@@ -1361,7 +1373,7 @@ function renderGownSnapshot(){
     </div>`;
   }).join('');
   document.getElementById('gownSnapshot').innerHTML =
-    `<h3 style="font-size:13px;margin:0 0 10px;">가운 매출</h3>
+    `<h3 style="font-size:13px;margin:0 0 10px;">Regen 75가운 현황</h3>
     <div class="snapshot-rest compact">${html}</div>
     <p class="snapshot-note">※ 기준월(${monthLabelFull(refIdx)}) 기준, 인천세종병원·부천세종병원 매출 합산액입니다.</p>`;
 }
@@ -1374,10 +1386,21 @@ const LAUNDRY_VENDOR_COLORS = {
   "일산중심재활병원":"var(--s6)","뉴고려병원":"var(--s8)",
 };
 
+// 전체 합계를 가장 먼저, 크게 보여주고(.snapshot-top 재사용) 그 아래에 구성 병원별
+// 내역을 작게 배치한다 - "전체 세탁매출이 먼저 눈에 띄어야 한다"는 요청에 맞춤.
 function renderLaundrySnapshot(){
+  const totalArr = LAUNDRY_DATA.total;
+  const totalV = totalArr[refIdx];
+  const totalPrev = refIdx > 0 ? totalArr[refIdx-1] : null;
+  const totalYprev = refIdx >= 12 ? totalArr[refIdx-12] : null;
+  const topHtml = `<div class="snap-metric">
+      <div class="label">전체 세탁매출</div>
+      <div class="value">${fmtWon(totalV)}</div>
+      <div class="deltas">${deltaBadge(pctChange(totalV,totalPrev),'전월 ')}${deltaBadge(pctChange(totalV,totalYprev),'전년 ')}</div>
+    </div>`;
+
   const rows = LAUNDRY_VENDORS.map(name => ({label:name, arr: LAUNDRY_DATA.items[name]}));
-  rows.push({label:'세탁 매출 합계', arr: LAUNDRY_DATA.total});
-  const html = rows.map(r => {
+  const restHtml = rows.map(r => {
     const v = r.arr[refIdx];
     const prev = refIdx > 0 ? r.arr[refIdx-1] : null;
     const yprev = refIdx >= 12 ? r.arr[refIdx-12] : null;
@@ -1391,7 +1414,8 @@ function renderLaundrySnapshot(){
   }).join('');
   document.getElementById('laundrySnapshot').innerHTML =
     `<h3 style="font-size:13px;margin:0 0 10px;">세탁 매출</h3>
-    <div class="snapshot-rest compact">${html}</div>
+    <div class="snapshot-top">${topHtml}</div>
+    <div class="snapshot-rest compact">${restHtml}</div>
     <p class="snapshot-note">※ 기준월(${monthLabelFull(refIdx)}) 기준, 병원별 일반세탁물 매출입니다.</p>`;
 }
 
@@ -1420,7 +1444,7 @@ function renderLaundryQuarterlyTable(){
     return {q: q+1, partial: actualMonths26 > 0 && actualMonths26 < 3, actualMonths26, total25, total26, yoy: pctChange(total26, total25Comp)};
   });
   const trs = rows.map(r => {
-    const qLabel = `${r.q}분기` + (r.partial ? ` <span class="anomaly-group" style="margin-left:4px;">${r.actualMonths26}개월 누적</span>` : '');
+    const qLabel = `Q${r.q}` + (r.partial ? ` <span class="anomaly-group" style="margin-left:4px;">${r.actualMonths26}개월 누적</span>` : '');
     return `<tr>
       <td>${qLabel}</td>
       <td>${fmtWon(r.total25)}</td>
