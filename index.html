@@ -384,10 +384,7 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
       <div class="chart-scroll"><svg id="chartGown" width="1020" height="240"></svg></div>
       <div class="legend" id="legGown"></div>
     </div>
-    <div class="card" id="gownTable" style="margin-bottom:20px;"></div>
-
-    <p class="section-sub" style="margin:20px 0 10px;">상단 기준월 선택에 따라 아래 병원별 가운 매출 구성이 함께 바뀝니다.</p>
-    <div class="midcat-grid" id="gownVendorGrid"></div>
+    <div class="card" id="gownQuarterTable" style="margin-bottom:20px;"></div>
   </section>
 
   <p class="note" id="footnote"></p>
@@ -604,8 +601,7 @@ function renderTabContent(tab){
     renderLaundryQuarterlyTable();
     renderGownSnapshot();
     renderGownChart();
-    renderGownTable();
-    renderGownVendorGrid();
+    renderGownQuarterlyTable();
   }
 }
 
@@ -823,6 +819,12 @@ function renderLegend(elId, items){
 // 26년이 아직 진행 중인 분기는 실적이 입력된 달까지만 합산하고, YoY는 25년의 같은 개월
 // 수만 비교한다 (예: 26년 3분기가 7~8월만 있으면 25년도 7~8월만 더해서 비교) - 그래야
 // 아직 안 지난 달의 매출 0이 섞여 증감률이 왜곡되지 않는다.
+// 26년 안에서 현재 실적 마감월이 속한 분기 번호(1~4) - 26년이 아직 시작 전이면 null(현재
+// 데이터 구조상 실제로는 항상 26년 안에 있음).
+function currentQuarterNum(){
+  return ACTUAL_CUTOFF_IDX >= 12 ? Math.floor((ACTUAL_CUTOFF_IDX - 12) / 3) + 1 : null;
+}
+
 function renderQuarterlyTable(){
   const sumRange = (arr, start, count) => {
     let s = 0;
@@ -845,7 +847,7 @@ function renderQuarterlyTable(){
     };
   });
 
-  const currentQ = ACTUAL_CUTOFF_IDX >= 12 ? Math.floor((ACTUAL_CUTOFF_IDX - 12) / 3) + 1 : null;
+  const currentQ = currentQuarterNum();
 
   const trs = rows.map(r => {
     const isCurrent = r.q === currentQ;
@@ -1382,10 +1384,20 @@ function renderCauseAnalysis(){
 }
 
 // ---------- tab 5: 가운 매출 (렌탈가운_멸균 · 렌탈가운_비멸균 · 렌탈 멸균 프로텍트커버) ----------
+// 세탁 매출과 동일하게 합계를 가장 먼저, 크게 보여주고 그 아래에 항목별 내역을 배치한다.
 function renderGownSnapshot(){
+  const totalArr = GOWN_DATA.total;
+  const totalV = totalArr[refIdx];
+  const totalPrev = refIdx > 0 ? totalArr[refIdx-1] : null;
+  const totalYprev = refIdx >= 12 ? totalArr[refIdx-12] : null;
+  const topHtml = `<div class="snap-metric">
+      <div class="label">가운 매출 합계</div>
+      <div class="value">${fmtWon(totalV)}</div>
+      <div class="deltas">${deltaBadge(pctChange(totalV,totalPrev),'전월 ')}${deltaBadge(pctChange(totalV,totalYprev),'전년 ')}</div>
+    </div>`;
+
   const rows = GOWN_ITEM_NAMES.map(name => ({label:name, arr: GOWN_DATA.items[name]}));
-  rows.push({label:'가운 매출 합계', arr: GOWN_DATA.total});
-  const html = rows.map(r => {
+  const restHtml = rows.map(r => {
     const v = r.arr[refIdx];
     const prev = refIdx > 0 ? r.arr[refIdx-1] : null;
     const yprev = refIdx >= 12 ? r.arr[refIdx-12] : null;
@@ -1398,7 +1410,8 @@ function renderGownSnapshot(){
     </div>`;
   }).join('');
   document.getElementById('gownSnapshot').innerHTML =
-    `<div class="snapshot-rest">${html}</div>
+    `<div class="snapshot-top">${topHtml}</div>
+    <div class="snapshot-rest">${restHtml}</div>
     <p class="snapshot-note">※ 기준월(${monthLabelFull(refIdx)}) 기준, 인천세종병원·부천세종병원 매출 합산액입니다.</p>`;
 }
 
@@ -1451,36 +1464,48 @@ function renderLaundryChart(){
   renderLegend('legLaundry', series.map(s => ({name:s.name, color:s.color})));
 }
 
-// 25년 대비 로직은 renderQuarterlyTable과 동일 - 26년 진행 중인 분기는 실적 있는 달까지만.
-function renderLaundryQuarterlyTable(){
+// 25년 대비 로직은 renderQuarterlyTable과 동일 - 26년 진행 중인 분기는 실적 있는 달까지만
+// 합산하고, 현재 분기는 매출추이 탭과 같은 배지/하이라이트로 표시한다. 세탁 매출·가운 매출
+// 둘 다 지표가 총액 하나뿐이라 공용 함수로 뺐다.
+function renderSingleMetricQuarterlyTable(containerId, title, totalArr){
   const sumRange = (arr, start, count) => {
     let s = 0;
     for (let i = 0; i < count; i++) s += (arr[start+i] || 0);
     return s;
   };
+  const currentQ = currentQuarterNum();
   const rows = [0,1,2,3].map(q => {
     const start25 = q*3, start26 = 12+q*3;
     const actualMonths26 = Math.max(0, Math.min(3, ACTUAL_CUTOFF_IDX - start26 + 1));
-    const total25 = sumRange(LAUNDRY_DATA.total, start25, 3);
-    const total26 = actualMonths26 > 0 ? sumRange(LAUNDRY_DATA.total, start26, actualMonths26) : null;
-    const total25Comp = actualMonths26 > 0 ? sumRange(LAUNDRY_DATA.total, start25, actualMonths26) : null;
+    const total25 = sumRange(totalArr, start25, 3);
+    const total26 = actualMonths26 > 0 ? sumRange(totalArr, start26, actualMonths26) : null;
+    const total25Comp = actualMonths26 > 0 ? sumRange(totalArr, start25, actualMonths26) : null;
     return {q: q+1, partial: actualMonths26 > 0 && actualMonths26 < 3, actualMonths26, total25, total26, yoy: pctChange(total26, total25Comp)};
   });
   const trs = rows.map(r => {
-    const qLabel = `Q${r.q}` + (r.partial ? ` <span class="anomaly-group" style="margin-left:4px;">${r.actualMonths26}개월 누적</span>` : '');
-    return `<tr>
+    const isCurrent = r.q === currentQ;
+    const qLabel = `Q${r.q}` +
+      (isCurrent ? ` <span class="current-q-badge">현재 분기</span>` : '') +
+      (r.partial ? ` <span class="anomaly-group" style="margin-left:4px;">${r.actualMonths26}개월 누적</span>` : '');
+    return `<tr${isCurrent ? ' class="current-quarter"' : ''}>
       <td>${qLabel}</td>
       <td>${fmtWon(r.total25)}</td>
       <td>${fmtWon(r.total26)}</td>
       <td>${deltaBadge(r.yoy,'')}</td>
     </tr>`;
   }).join('');
-  document.getElementById('laundryQuarterTable').innerHTML = `
-    <h3 style="font-size:13px;margin:0 0 10px;">분기별 세탁 매출 (25년 대비)</h3>
+  document.getElementById(containerId).innerHTML = `
+    <h3 style="font-size:13px;margin:0 0 10px;">${title}</h3>
     <div class="chart-scroll"><table class="compare-table">
       <thead><tr><th>분기</th><th>25년</th><th>26년</th><th>YoY</th></tr></thead>
       <tbody>${trs}</tbody>
     </table></div>`;
+}
+function renderLaundryQuarterlyTable(){
+  renderSingleMetricQuarterlyTable('laundryQuarterTable', '분기별 세탁 매출 (25년 대비)', LAUNDRY_DATA.total);
+}
+function renderGownQuarterlyTable(){
+  renderSingleMetricQuarterlyTable('gownQuarterTable', '분기별 가운 매출 (25년 대비)', GOWN_DATA.total);
 }
 
 function renderGownChart(){
@@ -1490,70 +1515,6 @@ function renderGownChart(){
   series.push({name:'가운 매출 합계', color:'var(--s1)', data: GOWN_DATA.total.slice(0,n)});
   drawLineChart('chartGown', series, labels, {padL:64, highlightIdx: refIdx});
   renderLegend('legGown', series.map(s => ({name:s.name, color:s.color})));
-}
-
-function renderGownTable(){
-  const rows = GOWN_ITEM_NAMES.map(name => ({label:name, arr: GOWN_DATA.items[name]}));
-  rows.push({label:'가운 매출 합계', arr: GOWN_DATA.total});
-  const prevIdx = refIdx - 1;
-  const yoyIdx = refIdx - 12;
-  const refLabel = monthLabelFull(refIdx);
-  const prevLabel = prevIdx >= 0 ? monthLabelFull(prevIdx) : '전월';
-  const yoyLabel = yoyIdx >= 0 ? monthLabelFull(yoyIdx) : '전년동월';
-
-  const trs = rows.map(r => {
-    const v = r.arr[refIdx];
-    const prev = prevIdx >= 0 ? r.arr[prevIdx] : null;
-    const yprev = yoyIdx >= 0 ? r.arr[yoyIdx] : null;
-    const mom = pctChange(v, prev);
-    const yoy = pctChange(v, yprev);
-    return `<tr>
-      <td>${r.label}</td>
-      <td>${fmtWon(v)}</td>
-      <td>${fmtWon(prev)}</td>
-      <td>${deltaBadge(mom,'')}</td>
-      <td>${fmtWon(yprev)}</td>
-      <td>${deltaBadge(yoy,'')}</td>
-    </tr>`;
-  }).join('');
-
-  document.getElementById('gownTable').innerHTML = `
-    <h3 style="font-size:13px;margin:0 0 10px;">가운 매출 항목별 비교</h3>
-    <div class="chart-scroll"><table class="compare-table">
-      <thead><tr>
-        <th>항목</th><th>${refLabel}</th><th>${prevLabel}</th><th>전월비</th><th>${yoyLabel}</th><th>전년비</th>
-      </tr></thead>
-      <tbody>${trs}</tbody>
-    </table></div>`;
-}
-
-function renderGownVendorGrid(){
-  const idx = refIdx;
-  const grid = document.getElementById('gownVendorGrid');
-  grid.innerHTML = '';
-  GOWN_ITEM_NAMES.forEach(name => {
-    const total = GOWN_DATA.items[name][idx] || 0;
-    const byVendor = GOWN_DATA.byVendor[name] || {};
-    let items = Object.keys(byVendor).map(v => ({name:v, value: byVendor[v][idx] || 0}));
-    items = items.filter(it => Math.abs(it.value) > 0.5);
-    items.sort((a,b) => b.value - a.value);
-    const maxV = Math.max(1, ...items.map(it => Math.abs(it.value)));
-    const color = GOWN_ITEM_COLORS[name];
-
-    const card = document.createElement('div');
-    card.className = 'card midcat-card';
-    const rowsHtml = items.map(it => {
-      const pct = total ? (it.value/total*100) : 0;
-      const w = Math.max(2, Math.abs(it.value)/maxV*100);
-      return `<div class="hbar-row">
-        <div class="name" title="${it.name}">${it.name}</div>
-        <div class="hbar-track"><div class="hbar-fill" style="width:${w}%;background:${color};"></div></div>
-        <div class="val">${fmtWon(it.value)} (${pct.toFixed(0)}%)</div>
-      </div>`;
-    }).join('');
-    card.innerHTML = `<h3>${name} 총액: ${fmtWon(total)}</h3>${rowsHtml || '<div class="note">데이터 없음</div>'}`;
-    grid.appendChild(card);
-  });
 }
 
 function renderFootnote(){
