@@ -357,12 +357,15 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
     <div class="subsection-head"><span class="subsection-num">1</span><h3>종합의견</h3></div>
     <div class="card" id="monthlyComment" style="margin-bottom:28px;"></div>
 
-    <div class="subsection-head"><span class="subsection-num">2</span><h3>매출액 대비 비중 변동 TOP 3</h3></div>
+    <div class="subsection-head"><span class="subsection-num">2</span><h3>향후 도입 안건</h3></div>
+    <div class="card" id="agendaNotes" style="margin-bottom:28px;"></div>
+
+    <div class="subsection-head"><span class="subsection-num">3</span><h3>매출액 대비 비중 변동 TOP 3</h3></div>
     <div class="card" style="margin-bottom:28px;">
       <div class="anomaly-row" id="anomalyRow"></div>
     </div>
 
-    <div class="subsection-head"><span class="subsection-num">3</span><h3>원인 분석</h3></div>
+    <div class="subsection-head"><span class="subsection-num">4</span><h3>원인 분석</h3></div>
     <p class="section-sub" style="margin:0 0 14px;">각 항목 아래에 (A) 원본 장부의 거래처·상세내역 기준 전월 대비 변화 후보와, (B) 담당자가 남긴 메모를 함께 보여줍니다.</p>
     <div id="causeAnalysis"></div>
   </section>
@@ -405,6 +408,7 @@ let DETAIL_DATA = null;
 let GOWN_DATA = null;
 let LAUNDRY_DATA = null;
 let COMMENTS = {}; // key: "25-1".."26-12" -> {comment, updated_at}
+let STANDING_NOTES = {}; // key: e.g. "agenda" -> {content, updated_at} - 기준월과 무관한 상시 메모
 const GOWN_ITEM_NAMES = ["렌탈가운_멸균","렌탈가운_비멸균","렌탈 멸균 프로텍트커버"];
 const GOWN_ITEM_COLORS = {"렌탈가운_멸균":"var(--s5)","렌탈가운_비멸균":"var(--s6)","렌탈 멸균 프로텍트커버":"var(--s7)"};
 
@@ -1375,6 +1379,47 @@ function renderMonthlyComment(){
   });
 }
 
+// ---------- tab 4, subsection 2: 향후 도입 안건 (기준월과 무관한 상시 메모 1개) ----------
+// 기준월을 바꿔도 이 칸은 그대로 유지돼야 하므로, 매 renderTabContent 호출이 아니라
+// startDashboard()에서 한 번만 그려서 기준월 전환 중 작성 중인 초안이 사라지지 않게 한다.
+function renderAgendaNotes(){
+  const existing = STANDING_NOTES['agenda'];
+  const box = document.getElementById('agendaNotes');
+  box.innerHTML = `
+    <p class="note" style="margin:0 0 8px;">기준월과 상관없이 하나로 유지되는 메모입니다.</p>
+    <div class="note-box">
+      <textarea id="agendaInput" placeholder="앞으로 도입하고자 하는 안건을 자유롭게 적어주세요.">${existing ? escapeHtml(existing.content) : ''}</textarea>
+      <div class="note-actions">
+        <button class="note-btn" id="agendaSaveBtn">저장</button>
+        <span class="note-status" id="agendaStatus">${existing && existing.content ? '마지막 저장: ' + new Date(existing.updated_at).toLocaleString('ko-KR') : ''}</span>
+      </div>
+    </div>`;
+
+  const agendaInput = document.getElementById('agendaInput');
+  const autoGrow = () => { agendaInput.style.height = 'auto'; agendaInput.style.height = (agendaInput.scrollHeight + 2) + 'px'; };
+  agendaInput.style.minHeight = '180px';
+  autoGrow();
+  agendaInput.addEventListener('input', autoGrow);
+
+  document.getElementById('agendaSaveBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('agendaSaveBtn');
+    const status = document.getElementById('agendaStatus');
+    const content = document.getElementById('agendaInput').value;
+    btn.disabled = true;
+    status.textContent = '저장 중…';
+    try {
+      await apiCall('save-standing-note', {token: getToken(), key: 'agenda', content});
+      const now = new Date().toISOString();
+      STANDING_NOTES['agenda'] = {key: 'agenda', content, updated_at: now};
+      status.textContent = '마지막 저장: ' + new Date(now).toLocaleString('ko-KR');
+    } catch(e){
+      status.textContent = '저장 실패: ' + e.message;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+}
+
 function renderAnomalyTop3(){
   const refLabel = monthLabelFull(refIdx);
   const prevLabel = refIdx > 0 ? monthLabelFull(refIdx-1) : '전월';
@@ -1631,6 +1676,7 @@ function startDashboard(){
   populateRefSelect();
   document.getElementById('refMonthSel').value = refIdx;
   initTabs();
+  renderAgendaNotes();
   renderAll();
   // sec4 has no charts that need resize-driven redraws, and a full re-render there would
   // wipe an in-progress, unsaved 원인 메모 draft - skip it while that tab is active.
@@ -1834,6 +1880,8 @@ async function loadAndRender(){
     DATA = built.DATA; DETAIL_DATA = built.DETAIL_DATA; GOWN_DATA = built.GOWN_DATA; LAUNDRY_DATA = built.LAUNDRY_DATA;
     COMMENTS = {};
     (data.comments || []).forEach(c => { COMMENTS[`${c.year}-${c.month}`] = c; });
+    STANDING_NOTES = {};
+    (data.standingNotes || []).forEach(n => { STANDING_NOTES[n.key] = n; });
     computeDerived();
     app.classList.remove('loading');
     hideGate();

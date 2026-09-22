@@ -44,17 +44,19 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const [lineItems, summaryMetrics, logRes, commentsRes] = await Promise.all([
+    const [lineItems, summaryMetrics, logRes, commentsRes, standingNotesRes] = await Promise.all([
       fetchAll("pnl_line_items"),
       fetchAll("pnl_summary_metrics"),
       supabase.from("upload_log").select("*").order("uploaded_at", { ascending: false }).limit(20),
       supabase.from("monthly_comments").select("*").order("year").order("month"),
+      supabase.from("standing_notes").select("*"),
     ]);
     return jsonResponse({
       lineItems,
       summaryMetrics,
       uploadLog: logRes.data ?? [],
       comments: commentsRes.data ?? [],
+      standingNotes: standingNotesRes.data ?? [],
     });
   } catch (e) {
     return jsonResponse({ error: e instanceof Error ? e.message : String(e) }, 500);
