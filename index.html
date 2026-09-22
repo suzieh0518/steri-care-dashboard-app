@@ -1096,20 +1096,20 @@ function renderKPI(){
   const refMonth = DATA.months[refIdx].month;
   const ys = yearStartIdx(refYear);
   const ytdRev = DATA.revenue.slice(ys, refIdx+1).reduce((a,b)=>a+b,0);
-  const ytdOI = DATA.opIncomeNew.slice(ys, refIdx+1).reduce((a,b)=>a+(b||0),0);
+  const ytdGP = DATA.grossProfit.slice(ys, refIdx+1).reduce((a,b)=>a+(b||0),0);
   const lastRev = DATA.revenue[refIdx] || 0;
-  const lastOI = DATA.opIncomeNew[refIdx] || 0;
+  const lastGP = DATA.grossProfit[refIdx] || 0;
   const remaining = 12 - refMonth;
   const projRev = ytdRev + remaining * lastRev;
-  const projOI = ytdOI + remaining * lastOI;
+  const projGP = ytdGP + remaining * lastGP;
 
   const actualItems = [
     {label: '누적 매출', value: fmtWon(ytdRev), cls:""},
-    {label: '누적 영업이익', value: fmtWon(ytdOI), cls: ytdOI>=0?"pos":"neg"},
+    {label: '누적 매출총이익', value: fmtWon(ytdGP), cls: ytdGP>=0?"pos":"neg"},
   ];
   const projItems = [
     {label: remaining>0 ? '예상 매출' : '연간 매출 합계', value: fmtWon(projRev), cls:""},
-    {label: remaining>0 ? '예상 영업이익' : '연간 영업이익 합계', value: fmtWon(projOI), cls: projOI>=0?"pos":"neg"},
+    {label: remaining>0 ? '예상 매출총이익' : '연간 매출총이익 합계', value: fmtWon(projGP), cls: projGP>=0?"pos":"neg"},
   ];
   const kpiHtml = items => items.map(it => `
       <div class="kpi">
