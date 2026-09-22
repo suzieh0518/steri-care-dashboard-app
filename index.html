@@ -112,7 +112,8 @@ section{margin-bottom:44px; padding-top:6px;}
 .snapshot-card{margin-bottom:24px;}
 .snapshot-top{display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--border);}
 .snapshot-top .snap-metric.bizdays .value{font-size:19px;}
-.snapshot-top .snap-metric.bizdays{text-align:right;}
+.snapshot-top .snap-metric.bizdays{text-align:right; max-width:280px;}
+.bizdays-holidays{font-size:10.5px; color:var(--text-muted); margin-top:6px; line-height:1.5;}
 .snapshot-top .snap-metric .value{font-size:30px;}
 .snapshot-rest{display:grid; grid-template-columns:repeat(4,1fr); gap:18px;}
 .snapshot-rest.compact{grid-template-columns:repeat(2,1fr);}
@@ -152,6 +153,9 @@ section{margin-bottom:44px; padding-top:6px;}
 .compare-table th.qt-group.qt-gp{background:color-mix(in srgb, var(--s2) 16%, var(--surface)); color:var(--s2);}
 .compare-table td.qt-rev-val{font-weight:800; color:var(--s1);}
 .compare-table td.qt-gp-val{font-weight:800; color:var(--s2);}
+.compare-table tr.current-quarter{background:color-mix(in srgb, var(--refmark) 9%, transparent);}
+.compare-table tr.current-quarter td:first-child{color:var(--refmark); font-weight:800;}
+.current-q-badge{display:inline-block; font-size:10px; font-weight:800; color:#fff; background:var(--refmark); border-radius:999px; padding:2px 8px; margin-left:4px; vertical-align:1px;}
 .trend-mini-row{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:16px;}
 .mini-card h4{font-size:12px; font-weight:700; color:var(--text-secondary); margin:0 0 8px;}
 .mini-card .mini-value{font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; margin-bottom:2px;}
@@ -360,30 +364,27 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
 
   <section id="sec5" class="tab-section" hidden>
     <div class="section-head"><span class="section-num">3</span><h2>매출 세부</h2></div>
-    <p class="section-sub">좌측: 일반세탁물 매출(부천·인천세종병원은 일반세탁물만, 파주·일산중심재활·뉴고려병원은 매출 전체). 우측: 렌탈가운_멸균 · 렌탈가운_비멸균 · 렌탈 멸균 프로텍트커버 매출(인천세종병원·부천세종병원 합산).</p>
+    <p class="section-sub">세탁 매출과 Regen75 가운 매출을 각각 별도로 추적합니다.</p>
 
-    <div class="chart-row" style="margin-bottom:16px;">
-      <div class="card" id="laundrySnapshot"></div>
-      <div class="card" id="gownSnapshot"></div>
+    <div class="subsection-head"><span class="subsection-num">1</span><h3>세탁 매출</h3></div>
+    <p class="section-sub" style="margin:0 0 12px;">일반세탁물 매출 - 부천·인천세종병원은 일반세탁물만, 파주·일산중심재활·뉴고려병원은 매출 전체(어차피 일반세탁물뿐입니다).</p>
+    <div class="card" id="laundrySnapshot" style="margin-bottom:16px;"></div>
+    <div class="card" style="margin-bottom:16px;">
+      <h3 style="font-size:13px;margin:0 0 8px;">월별 세탁 매출 추이</h3>
+      <div class="chart-scroll"><svg id="chartLaundry" width="1020" height="240"></svg></div>
+      <div class="legend" id="legLaundry"></div>
     </div>
+    <div class="card" id="laundryQuarterTable" style="margin-bottom:28px;"></div>
 
-    <div class="chart-row" style="margin-bottom:16px;">
-      <div class="card">
-        <h3 style="font-size:13px;margin:0 0 8px;">월별 세탁 매출 추이</h3>
-        <div class="chart-scroll"><svg id="chartLaundry" width="500" height="230"></svg></div>
-        <div class="legend" id="legLaundry"></div>
-      </div>
-      <div class="card">
-        <h3 style="font-size:13px;margin:0 0 8px;">월별 가운 매출 추이</h3>
-        <div class="chart-scroll"><svg id="chartGown" width="500" height="230"></svg></div>
-        <div class="legend" id="legGown"></div>
-      </div>
+    <div class="subsection-head"><span class="subsection-num">2</span><h3>Regen75 가운 매출</h3></div>
+    <p class="section-sub" style="margin:0 0 12px;">렌탈가운_멸균 · 렌탈가운_비멸균 · 렌탈 멸균 프로텍트커버 매출(인천세종병원·부천세종병원 합산).</p>
+    <div class="card" id="gownSnapshot" style="margin-bottom:16px;"></div>
+    <div class="card" style="margin-bottom:16px;">
+      <h3 style="font-size:13px;margin:0 0 8px;">월별 가운 매출 추이</h3>
+      <div class="chart-scroll"><svg id="chartGown" width="1020" height="240"></svg></div>
+      <div class="legend" id="legGown"></div>
     </div>
-
-    <div class="chart-row" style="margin-bottom:20px;">
-      <div class="card" id="laundryQuarterTable"></div>
-      <div class="card" id="gownTable"></div>
-    </div>
+    <div class="card" id="gownTable" style="margin-bottom:20px;"></div>
 
     <p class="section-sub" style="margin:20px 0 10px;">상단 기준월 선택에 따라 아래 병원별 가운 매출 구성이 함께 바뀝니다.</p>
     <div class="midcat-grid" id="gownVendorGrid"></div>
@@ -445,14 +446,18 @@ let NET_INCOME_RATIO, GROSS_PROFIT_RATIO, OPINCOME_NEW_RATIO;
 
 // 관공서의 공휴일에 관한 규정 기준 법정공휴일 + 대체공휴일 + 2025년 1/27 임시공휴일.
 // 근로자의 날(5/1)은 관공서 공휴일이 아니라 제외 - "국공일만 제외" 기준에 맞춤.
-const KR_HOLIDAYS = new Set([
-  '2025-01-01','2025-01-27','2025-01-28','2025-01-29','2025-01-30',
-  '2025-03-01','2025-03-03','2025-05-05','2025-05-06','2025-06-06',
-  '2025-08-15','2025-10-03','2025-10-05','2025-10-06','2025-10-07','2025-10-08','2025-10-09','2025-12-25',
-  '2026-01-01','2026-02-16','2026-02-17','2026-02-18','2026-03-01','2026-03-02',
-  '2026-05-05','2026-05-24','2026-05-25','2026-06-06','2026-08-15','2026-08-17',
-  '2026-09-24','2026-09-25','2026-09-26','2026-10-03','2026-10-05','2026-10-09','2026-12-25',
-]);
+const KR_HOLIDAY_NAMES = {
+  '2025-01-01':'신정', '2025-01-27':'임시공휴일', '2025-01-28':'설날 연휴', '2025-01-29':'설날', '2025-01-30':'설날 연휴',
+  '2025-03-01':'삼일절', '2025-03-03':'삼일절 대체공휴일', '2025-05-05':'어린이날', '2025-05-06':'어린이날 대체공휴일', '2025-06-06':'현충일',
+  '2025-08-15':'광복절', '2025-10-03':'개천절', '2025-10-05':'추석 연휴', '2025-10-06':'추석', '2025-10-07':'추석 연휴',
+  '2025-10-08':'추석 대체공휴일', '2025-10-09':'한글날', '2025-12-25':'성탄절',
+  '2026-01-01':'신정', '2026-02-16':'설날 연휴', '2026-02-17':'설날', '2026-02-18':'설날 연휴',
+  '2026-03-01':'삼일절', '2026-03-02':'삼일절 대체공휴일', '2026-05-05':'어린이날', '2026-05-24':'부처님오신날', '2026-05-25':'부처님오신날 대체공휴일',
+  '2026-06-06':'현충일', '2026-08-15':'광복절', '2026-08-17':'광복절 대체공휴일',
+  '2026-09-24':'추석 연휴', '2026-09-25':'추석', '2026-09-26':'추석 연휴', '2026-10-03':'개천절', '2026-10-05':'개천절 대체공휴일',
+  '2026-10-09':'한글날', '2026-12-25':'성탄절',
+};
+const KR_HOLIDAYS = new Set(Object.keys(KR_HOLIDAY_NAMES));
 // "매일 운영, 국공휴일만 제외" 기준 - 병원 대상 서비스라 주말에도 운영하므로 토/일은 뺴지 않는다.
 function businessDaysInMonth(year, month){
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -462,6 +467,16 @@ function businessDaysInMonth(year, month){
     if (!KR_HOLIDAYS.has(iso)) count++;
   }
   return count;
+}
+// 해당 월에 낀 공휴일 목록 - "며칠 며칠 무슨 날 때문에 영업일이 줄었다"를 보여주기 위함.
+function holidaysInMonth(year, month){
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const list = [];
+  for (let d = 1; d <= daysInMonth; d++){
+    const iso = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if (KR_HOLIDAY_NAMES[iso]) list.push(`${month}/${d} ${KR_HOLIDAY_NAMES[iso]}`);
+  }
+  return list;
 }
 
 function monthLabelFull(idx){
@@ -630,6 +645,10 @@ function renderSnapshot(){
   const revYoy = pctChange(revV, revYprev);
   const refMonth = DATA.months[refIdx];
   const bizDays = businessDaysInMonth(refMonth.year, refMonth.month);
+  const monthHolidays = holidaysInMonth(refMonth.year, refMonth.month);
+  const holidayNote = monthHolidays.length
+    ? `<div class="bizdays-holidays">${monthHolidays.join(', ')} 제외</div>`
+    : `<div class="bizdays-holidays">해당 월 공휴일 없음</div>`;
   const topHtml = `<div class="snap-metric">
       <div class="label">매출액</div>
       <div class="value">${fmtWon(revV)}</div>
@@ -639,6 +658,7 @@ function renderSnapshot(){
       <div class="label">당월 영업일수</div>
       <div class="value">${bizDays}일</div>
       <div class="deltas"><span class="delta-badge flat">주말 포함, 국공휴일 제외</span></div>
+      ${holidayNote}
     </div>`;
 
   const metrics = [
@@ -825,9 +845,14 @@ function renderQuarterlyTable(){
     };
   });
 
+  const currentQ = ACTUAL_CUTOFF_IDX >= 12 ? Math.floor((ACTUAL_CUTOFF_IDX - 12) / 3) + 1 : null;
+
   const trs = rows.map(r => {
-    const qLabel = `Q${r.q}` + (r.partial ? ` <span class="anomaly-group" style="margin-left:4px;">${r.actualMonths26}개월 누적</span>` : '');
-    return `<tr>
+    const isCurrent = r.q === currentQ;
+    const qLabel = `Q${r.q}` +
+      (isCurrent ? ` <span class="current-q-badge">현재 분기</span>` : '') +
+      (r.partial ? ` <span class="anomaly-group" style="margin-left:4px;">${r.actualMonths26}개월 누적</span>` : '');
+    return `<tr${isCurrent ? ' class="current-quarter"' : ''}>
       <td>${qLabel}</td>
       <td>${fmtWon(r.rev25)}</td>
       <td class="qt-rev-val">${fmtWon(r.rev26)}</td>
@@ -1373,8 +1398,7 @@ function renderGownSnapshot(){
     </div>`;
   }).join('');
   document.getElementById('gownSnapshot').innerHTML =
-    `<h3 style="font-size:13px;margin:0 0 10px;">Regen 75가운 현황</h3>
-    <div class="snapshot-rest compact">${html}</div>
+    `<div class="snapshot-rest">${html}</div>
     <p class="snapshot-note">※ 기준월(${monthLabelFull(refIdx)}) 기준, 인천세종병원·부천세종병원 매출 합산액입니다.</p>`;
 }
 
@@ -1413,9 +1437,8 @@ function renderLaundrySnapshot(){
     </div>`;
   }).join('');
   document.getElementById('laundrySnapshot').innerHTML =
-    `<h3 style="font-size:13px;margin:0 0 10px;">세탁 매출</h3>
-    <div class="snapshot-top">${topHtml}</div>
-    <div class="snapshot-rest compact">${restHtml}</div>
+    `<div class="snapshot-top">${topHtml}</div>
+    <div class="snapshot-rest">${restHtml}</div>
     <p class="snapshot-note">※ 기준월(${monthLabelFull(refIdx)}) 기준, 병원별 일반세탁물 매출입니다.</p>`;
 }
 
