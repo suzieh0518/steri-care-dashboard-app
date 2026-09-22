@@ -209,6 +209,7 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
 .cause-tag.new{background:color-mix(in srgb, var(--bad) 16%, transparent); color:var(--bad);}
 .cause-tag.gone{background:var(--surface-2); color:var(--text-muted);}
 .note-box textarea{width:100%; min-height:64px; resize:vertical; background:var(--surface); color:var(--text-primary); border:1px solid var(--border); border-radius:8px; padding:9px 11px; font-size:12.5px; font-family:inherit; box-sizing:border-box;}
+#commentInput{min-height:180px;}
 .note-box .note-actions{display:flex; align-items:center; gap:10px; margin-top:6px;}
 .note-btn{background:var(--s1); color:#fff; border:none; border-radius:7px; padding:7px 14px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit;}
 .note-btn:disabled{opacity:.5; cursor:default;}
@@ -1348,6 +1349,12 @@ function renderMonthlyComment(){
         <span class="note-status" id="commentStatus">${existing && existing.comment ? '마지막 저장: ' + new Date(existing.updated_at).toLocaleString('ko-KR') : ''}</span>
       </div>
     </div>`;
+
+  // 내용이 길어도 스크롤 없이 한 번에 다 보이도록 입력창 높이를 내용에 맞춰 자동으로 늘린다.
+  const commentInput = document.getElementById('commentInput');
+  const autoGrow = () => { commentInput.style.height = 'auto'; commentInput.style.height = (commentInput.scrollHeight + 2) + 'px'; };
+  autoGrow();
+  commentInput.addEventListener('input', autoGrow);
 
   document.getElementById('commentSaveBtn').addEventListener('click', async () => {
     const btn = document.getElementById('commentSaveBtn');
