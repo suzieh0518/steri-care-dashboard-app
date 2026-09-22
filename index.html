@@ -157,10 +157,6 @@ section{margin-bottom:44px; padding-top:6px;}
 .compare-table tr.current-quarter{background:color-mix(in srgb, var(--refmark) 9%, transparent);}
 .compare-table tr.current-quarter td:first-child{color:var(--refmark); font-weight:800;}
 .current-q-badge{display:inline-block; font-size:10px; font-weight:800; color:#fff; background:var(--refmark); border-radius:999px; padding:2px 8px; margin-left:4px; vertical-align:1px;}
-.trend-mini-row{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:16px;}
-.mini-card h4{font-size:12px; font-weight:700; color:var(--text-secondary); margin:0 0 8px;}
-.mini-card .mini-value{font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; margin-bottom:2px;}
-.mini-card .mini-sub{font-size:11px; color:var(--text-muted); margin-bottom:8px;}
 .chart-row{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
 .chart-scroll{overflow-x:auto;}
 .legend{display:flex; gap:14px; flex-wrap:wrap; margin-top:8px; font-size:11px; color:var(--text-secondary);}
@@ -229,7 +225,6 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
   .kpi-groups{grid-template-columns:1fr;}
   .chart-row{grid-template-columns:1fr;}
   .midcat-grid{grid-template-columns:1fr;}
-  .trend-mini-row{grid-template-columns:1fr;}
   .snapshot-rest{grid-template-columns:repeat(2,1fr);}
   .anomaly-row{grid-template-columns:1fr;}
   .cause-row{grid-template-columns:1fr;}
@@ -314,8 +309,6 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
         <div class="legend" id="legRevNI"></div>
       </div>
     </div>
-
-    <div class="trend-mini-row" id="trendMiniRow" style="margin-top:14px;"></div>
   </section>
 
   <section id="sec2" class="tab-section" hidden>
@@ -677,7 +670,6 @@ function renderTabContent(tab){
     renderKPI();
     renderQuarterlyTable();
     renderSec1Charts();
-    renderTrendMini();
   } else if (tab === 'sec2'){
     renderRatioChart();
     renderKeyMetricsTable();
@@ -1145,43 +1137,6 @@ function computeRatioPPChangeYoY(ratioArr, n){
     if (ratioArr[i] != null && ratioArr[i-12] != null) out[i] = ratioArr[i] - ratioArr[i-12];
   }
   return out;
-}
-
-// ---------- section 2: trend mini row (매출액 + 당기순이익, 각각 수준/전월비/전년비) ----------
-// 매출액 자체는 "비중"이 성립하지 않는 기준값이라 금액 증감률을 그대로 쓰고, 당기순이익은
-// 대시보드 전체와 일관되게 매출액 대비 비중의 전월/전년 변화(%p)로 통일했다 - 상단 스냅샷
-// 카드의 당기순이익 배지와 같은 기준.
-function renderTrendMini(){
-  const n = ACTUAL_CUTOFF_IDX + 1;
-  const labels = buildMonthLabels(n);
-  const refLabel = monthLabelFull(refIdx);
-
-  const rev = DATA.revenue.slice(0, n);
-  const ni = DATA.netIncome.slice(0, n);
-  const momRev = computeMoM(DATA.revenue, n);
-  const yoyRev = computeYoY(DATA.revenue, n);
-  const momNI = computeRatioPPChangeMoM(NET_INCOME_RATIO, n);
-  const yoyNI = computeRatioPPChangeYoY(NET_INCOME_RATIO, n);
-
-  const cards = [
-    {id:'miniRev', title:'월별 매출액', value: fmtWon(rev[refIdx]), cls:'', data: rev, sopts:{color:'var(--s1)', tooltipLabel:'매출액'}},
-    {id:'miniRevMoM', title:'매출 전월대비', value: fmtPct(momRev[refIdx]), cls: (momRev[refIdx]||0)>=0?'pos':'neg', data: momRev, sopts:{statusColor:true, isPercent:true, tooltipLabel:'전월대비'}},
-    {id:'miniRevYoY', title:'매출 전년동월대비', value: fmtPct(yoyRev[refIdx]), cls: (yoyRev[refIdx]||0)>=0?'pos':'neg', data: yoyRev, sopts:{statusColor:true, isPercent:true, tooltipLabel:'전년동월대비'}},
-    {id:'miniNI', title:'월별 당기순이익', value: fmtWon(ni[refIdx]), cls: (ni[refIdx]||0)>=0?'pos':'neg', data: ni, sopts:{color:'var(--s2)', tooltipLabel:'당기순이익'}},
-    {id:'miniNIMoM', title:'순이익 전월대비 (매출대비 비중)', value: fmtPP(momNI[refIdx]), cls: (momNI[refIdx]||0)>=0?'pos':'neg', data: momNI, sopts:{statusColor:true, tooltipLabel:'전월대비 비중 변화', fmt: v=>fmtPP(v)}},
-    {id:'miniNIYoY', title:'순이익 전년동월대비 (매출대비 비중)', value: fmtPP(yoyNI[refIdx]), cls: (yoyNI[refIdx]||0)>=0?'pos':'neg', data: yoyNI, sopts:{statusColor:true, tooltipLabel:'전년동월대비 비중 변화', fmt: v=>fmtPP(v)}},
-  ];
-
-  const row = document.getElementById('trendMiniRow');
-  row.innerHTML = cards.map(c => `
-    <div class="card mini-card">
-      <h4>${c.title}</h4>
-      <div class="mini-value ${c.cls}">${c.value}</div>
-      <div class="mini-sub">${refLabel} 기준</div>
-      <svg id="${c.id}" width="320" height="112"></svg>
-    </div>`).join('');
-
-  cards.forEach(c => drawBarMini(c.id, labels, c.data, {...c.sopts, highlightIdx: refIdx, allLabels:true, padB:34}));
 }
 
 // ---------- section 2: midcat ratio chart ----------
