@@ -353,12 +353,15 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
     <div class="section-head"><span class="section-num">3</span><h2>당월 특이사항 및 원인분석</h2></div>
     <p class="section-sub">노무비·경비 소분류를 통합해서 봅니다 (매출 상세내역·판관비·영업외비용 제외).</p>
 
-    <div class="subsection-head"><span class="subsection-num">1</span><h3>매출액 대비 비중 변동 TOP 3</h3></div>
+    <div class="subsection-head"><span class="subsection-num">1</span><h3>종합의견</h3></div>
+    <div class="card" id="monthlyComment" style="margin-bottom:28px;"></div>
+
+    <div class="subsection-head"><span class="subsection-num">2</span><h3>매출액 대비 비중 변동 TOP 3</h3></div>
     <div class="card" style="margin-bottom:28px;">
       <div class="anomaly-row" id="anomalyRow"></div>
     </div>
 
-    <div class="subsection-head"><span class="subsection-num">2</span><h3>원인 분석</h3></div>
+    <div class="subsection-head"><span class="subsection-num">3</span><h3>원인 분석</h3></div>
     <p class="section-sub" style="margin:0 0 14px;">각 항목 아래에 (A) 원본 장부의 거래처·상세내역 기준 전월 대비 변화 후보와, (B) 담당자가 남긴 메모를 함께 보여줍니다.</p>
     <div id="causeAnalysis"></div>
   </section>
@@ -400,6 +403,7 @@ let DETAIL_DATA = null;
 
 let GOWN_DATA = null;
 let LAUNDRY_DATA = null;
+let COMMENTS = {}; // key: "25-1".."26-12" -> {comment, updated_at}
 const GOWN_ITEM_NAMES = ["렌탈가운_멸균","렌탈가운_비멸균","렌탈 멸균 프로텍트커버"];
 const GOWN_ITEM_COLORS = {"렌탈가운_멸균":"var(--s5)","렌탈가운_비멸균":"var(--s6)","렌탈 멸균 프로텍트커버":"var(--s7)"};
 
@@ -594,6 +598,7 @@ function renderTabContent(tab){
     renderExpenseTrendChart();
     renderExpenseShareTable();
   } else if (tab === 'sec4'){
+    renderMonthlyComment();
     renderAnomalyTop3();
     renderCauseAnalysis();
   } else if (tab === 'sec5'){
@@ -637,6 +642,16 @@ function deltaBadgeCount(v, unit, prefix){
   const arrow = v > 0 ? '▲' : '▼';
   return `<span class="delta-badge ${cls}"><span class="k">${prefix}</span>${arrow}${Math.abs(v)}${unit}</span>`;
 }
+// 전월대비 증감을 %가 아니라 실제 원화 금액으로 보여준다 (전월 배지와 전년 배지 사이에 넣음).
+function deltaBadgeAmount(cur, prev){
+  if (cur === null || cur === undefined || prev === null || prev === undefined) {
+    return `<span class="delta-badge flat">-</span>`;
+  }
+  const diff = cur - prev;
+  const cls = diff >= 0 ? 'pos' : 'neg';
+  const sign = diff >= 0 ? '+' : '';
+  return `<span class="delta-badge ${cls}">${sign}${fmtWon(diff)}</span>`;
+}
 
 // ---------- snapshot card ----------
 // 매출액 자체는 금액 증감률(전월/전년)로 두고, 나머지 4개(비용/이익 항목)는 "매출액 대비 비중"이
@@ -660,7 +675,7 @@ function renderSnapshot(){
   const topHtml = `<div class="snap-metric">
       <div class="label">매출액</div>
       <div class="value">${fmtWon(revV)}</div>
-      <div class="deltas">${deltaBadge(revMom,'전월 ')}${deltaBadge(revYoy,'전년 ')}</div>
+      <div class="deltas">${deltaBadge(revMom,'전월 ')}${deltaBadgeAmount(revV,revPrev)}${deltaBadge(revYoy,'전년 ')}</div>
     </div>
     <div class="snap-metric bizdays">
       <div class="label">당월 영업일수</div>
@@ -677,6 +692,7 @@ function renderSnapshot(){
   ];
   const restHtml = metrics.map(m => {
     const v = m.arr[refIdx];
+    const vPrev = refIdx > 0 ? m.arr[refIdx-1] : null;
     const ratioNow = m.ratio[refIdx];
     const ratioPrev = refIdx > 0 ? m.ratio[refIdx-1] : null;
     const ratioYprev = refIdx >= 12 ? m.ratio[refIdx-12] : null;
@@ -685,7 +701,7 @@ function renderSnapshot(){
     return `<div class="snap-metric">
       <div class="label">${m.label}</div>
       <div class="value">${fmtWon(v)}</div>
-      <div class="deltas">${deltaBadgePP(ppMom,'전월 ')}${deltaBadgePP(ppYoy,'전년 ')}</div>
+      <div class="deltas">${deltaBadgePP(ppMom,'전월 ')}${deltaBadgeAmount(v,vPrev)}${deltaBadgePP(ppYoy,'전년 ')}</div>
     </div>`;
   }).join('');
 
@@ -1313,6 +1329,45 @@ function computeAnomalyTop3(){
     .sort((a,b) => Math.abs(b.ppChange) - Math.abs(a.ppChange))
     .slice(0,3);
 }
+// ---------- tab 4, subsection 1: 종합의견 (기준월별로 팀이 직접 남기는 코멘트) ----------
+// Supabase monthly_comments 테이블에 연도+월 단위로 하나씩 저장 - PIN을 아는 팀원 누구나
+// 읽고 덮어쓸 수 있다 (개별 작성자 구분 없음, 지금 요구사항엔 그거면 충분해서).
+function renderMonthlyComment(){
+  const m = DATA.months[refIdx];
+  const yearShort = String(m.year).slice(2); // "2026" -> "26", 백엔드/DB는 2자리 연도 문자열 사용
+  const key = `${yearShort}-${m.month}`;
+  const existing = COMMENTS[key];
+  const refLabel = monthLabelFull(refIdx);
+  const box = document.getElementById('monthlyComment');
+  box.innerHTML = `
+    <h3 style="font-size:13px;margin:0 0 8px;">${refLabel} 종합의견</h3>
+    <div class="note-box">
+      <textarea id="commentInput" placeholder="이 달 실적에 대한 종합의견을 남겨주세요.">${existing ? escapeHtml(existing.comment) : ''}</textarea>
+      <div class="note-actions">
+        <button class="note-btn" id="commentSaveBtn">저장</button>
+        <span class="note-status" id="commentStatus">${existing && existing.comment ? '마지막 저장: ' + new Date(existing.updated_at).toLocaleString('ko-KR') : ''}</span>
+      </div>
+    </div>`;
+
+  document.getElementById('commentSaveBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('commentSaveBtn');
+    const status = document.getElementById('commentStatus');
+    const comment = document.getElementById('commentInput').value;
+    btn.disabled = true;
+    status.textContent = '저장 중…';
+    try {
+      await apiCall('save-comment', {token: getToken(), year: yearShort, month: m.month, comment});
+      const now = new Date().toISOString();
+      COMMENTS[key] = {year: yearShort, month: m.month, comment, updated_at: now};
+      status.textContent = '마지막 저장: ' + new Date(now).toLocaleString('ko-KR');
+    } catch(e){
+      status.textContent = '저장 실패: ' + e.message;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+}
+
 function renderAnomalyTop3(){
   const refLabel = monthLabelFull(refIdx);
   const prevLabel = refIdx > 0 ? monthLabelFull(refIdx-1) : '전월';
@@ -1417,7 +1472,7 @@ function renderGownSnapshot(){
   const topHtml = `<div class="snap-metric">
       <div class="label">가운 매출 합계</div>
       <div class="value">${fmtWon(totalV)}</div>
-      <div class="deltas">${deltaBadge(pctChange(totalV,totalPrev),'전월 ')}${deltaBadge(pctChange(totalV,totalYprev),'전년 ')}</div>
+      <div class="deltas">${deltaBadge(pctChange(totalV,totalPrev),'전월 ')}${deltaBadgeAmount(totalV,totalPrev)}${deltaBadge(pctChange(totalV,totalYprev),'전년 ')}</div>
     </div>`;
 
   const rows = GOWN_ITEM_NAMES.map(name => ({label:name, arr: GOWN_DATA.items[name]}));
@@ -1430,7 +1485,7 @@ function renderGownSnapshot(){
     return `<div class="snap-metric">
       <div class="label">${r.label}</div>
       <div class="value">${fmtWon(v)}</div>
-      <div class="deltas">${deltaBadge(mom,'전월 ')}${deltaBadge(yoy,'전년 ')}</div>
+      <div class="deltas">${deltaBadge(mom,'전월 ')}${deltaBadgeAmount(v,prev)}${deltaBadge(yoy,'전년 ')}</div>
     </div>`;
   }).join('');
   document.getElementById('gownSnapshot').innerHTML =
@@ -1457,7 +1512,7 @@ function renderLaundrySnapshot(){
   const topHtml = `<div class="snap-metric">
       <div class="label">전체 세탁매출</div>
       <div class="value">${fmtWon(totalV)}</div>
-      <div class="deltas">${deltaBadge(pctChange(totalV,totalPrev),'전월 ')}${deltaBadge(pctChange(totalV,totalYprev),'전년 ')}</div>
+      <div class="deltas">${deltaBadge(pctChange(totalV,totalPrev),'전월 ')}${deltaBadgeAmount(totalV,totalPrev)}${deltaBadge(pctChange(totalV,totalYprev),'전년 ')}</div>
     </div>`;
 
   const rows = LAUNDRY_VENDORS.map(name => ({label:name, arr: LAUNDRY_DATA.items[name]}));
@@ -1470,7 +1525,7 @@ function renderLaundrySnapshot(){
     return `<div class="snap-metric">
       <div class="label">${r.label}</div>
       <div class="value">${fmtWon(v)}</div>
-      <div class="deltas">${deltaBadge(mom,'전월 ')}${deltaBadge(yoy,'전년 ')}</div>
+      <div class="deltas">${deltaBadge(mom,'전월 ')}${deltaBadgeAmount(v,prev)}${deltaBadge(yoy,'전년 ')}</div>
     </div>`;
   }).join('');
   document.getElementById('laundrySnapshot').innerHTML =
@@ -1770,6 +1825,8 @@ async function loadAndRender(){
     const data = await apiCall('get-pnl-data', {token: getToken()});
     const built = transformToData(data.lineItems, data.summaryMetrics);
     DATA = built.DATA; DETAIL_DATA = built.DETAIL_DATA; GOWN_DATA = built.GOWN_DATA; LAUNDRY_DATA = built.LAUNDRY_DATA;
+    COMMENTS = {};
+    (data.comments || []).forEach(c => { COMMENTS[`${c.year}-${c.month}`] = c; });
     computeDerived();
     app.classList.remove('loading');
     hideGate();
