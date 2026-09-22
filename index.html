@@ -1465,6 +1465,11 @@ function computeCauseCandidates(group, name, idx, prevIdx){
     .sort((a,b) => Math.abs(b.change) - Math.abs(a.change))
     .slice(0, 5);
 }
+// 항목·월별 원인 메모 키 - standing_notes 테이블을 종합의견/향후 도입 안건과 공유해서 쓴다
+// (key만 다르게 주면 되므로 새 테이블/함수 없이 재사용 가능).
+function causeNoteKey(year, month, group, name){
+  return `cause::${year}-${month}::${group}::${name}`;
+}
 function renderCauseAnalysis(){
   const idx = refIdx;
   const prevIdx = refIdx - 1;
@@ -1476,6 +1481,7 @@ function renderCauseAnalysis(){
     el.innerHTML = '';
     return;
   }
+  const yearShort = String(DATA.months[idx].year).slice(2);
   el.innerHTML = top3.map((r,i) => {
     const up = r.ppChange >= 0;
     const cls = up ? 'neg' : 'pos';
@@ -1497,6 +1503,9 @@ function renderCauseAnalysis(){
       </div>`;
     }).join('') : '<p class="note" style="margin:0;">이 항목은 거래처별 세부 내역 데이터가 없습니다.</p>';
 
+    const noteKey = causeNoteKey(yearShort, DATA.months[idx].month, r.group, r.name);
+    const existingNote = STANDING_NOTES[noteKey];
+
     return `<div class="card cause-card" data-group="${r.group}" data-name="${r.name}">
       <div class="cause-card-head">
         <span class="rank">TOP ${i+1}</span>
@@ -1508,10 +1517,42 @@ function renderCauseAnalysis(){
       ${candHtml}
       <div class="note-box" style="margin-top:14px;">
         <p class="cause-sub-head">B. 원인 메모</p>
-        <p class="note" style="margin:0;">메모 기능은 추후 지원 예정입니다.</p>
+        <textarea class="cause-note-input" data-key="${escapeHtml(noteKey)}" placeholder="이 항목의 변동 원인을 적어주세요.">${existingNote ? escapeHtml(existingNote.content) : ''}</textarea>
+        <div class="note-actions">
+          <button class="note-btn cause-note-save">저장</button>
+          <span class="note-status cause-note-status">${existingNote && existingNote.content ? '마지막 저장: ' + new Date(existingNote.updated_at).toLocaleString('ko-KR') : ''}</span>
+        </div>
       </div>
     </div>`;
   }).join('');
+
+  el.querySelectorAll('.cause-note-input').forEach(ta => {
+    const grow = () => { ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 2) + 'px'; };
+    ta.style.minHeight = '90px';
+    grow();
+    ta.addEventListener('input', grow);
+  });
+  el.querySelectorAll('.cause-note-save').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const box = btn.closest('.note-box');
+      const textarea = box.querySelector('.cause-note-input');
+      const status = box.querySelector('.cause-note-status');
+      const key = textarea.dataset.key;
+      const content = textarea.value;
+      btn.disabled = true;
+      status.textContent = '저장 중…';
+      try {
+        await apiCall('save-standing-note', {token: getToken(), key, content});
+        const now = new Date().toISOString();
+        STANDING_NOTES[key] = {key, content, updated_at: now};
+        status.textContent = '마지막 저장: ' + new Date(now).toLocaleString('ko-KR');
+      } catch(e){
+        status.textContent = '저장 실패: ' + e.message;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  });
 }
 
 // ---------- tab 5: 가운 매출 (렌탈가운_멸균 · 렌탈가운_비멸균 · 렌탈 멸균 프로텍트커버) ----------
