@@ -445,6 +445,8 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
     <div class="section-head"><span class="section-num">3</span><h2>비용 추이</h2></div>
     <p class="section-sub">총비용 = 노무비 + 경비 + 판관비 (영업외비용 제외) · 비용률 = 매출액 대비 총비용 비중</p>
 
+    <div class="card snapshot-card" id="costSnapshot"></div>
+
     <div class="kpi-groups" id="costKpiRow"></div>
 
     <div class="card quarter-only" id="costQuarterlyTable" style="margin-bottom:16px;"></div>
@@ -994,6 +996,7 @@ function renderTabContent(tab){
   if (tab === 'sec1'){
     renderSec1Charts();
   } else if (tab === 'sec6'){
+    renderCostSnapshot();
     renderCostKPI();
     renderCostQuarterlyTable();
     renderCostChart();
@@ -1206,6 +1209,51 @@ function oneoffNoteHtml(excl, planned){
   if (planned.list.length) parts.push('예정 비용 반영: ' +
     planned.list.map(e => `${ymLabel(e.ym)} ${escapeHtml(e.group)} ${fmtWon(Number(e.amount))}${e.memo ? ` (${escapeHtml(e.memo)})` : ''}`).join(', '));
   return parts.length ? `<p class="kpi-oneoff-note">※ ${parts.join(' · ')}</p>` : '';
+}
+
+// ---------- 비용추이 탭 상단: 기준 기간(당월/당분기) 비용 스냅샷 ----------
+// 비용은 늘면 부담이라 금액 증감 배지도 증가=빨강, 감소=초록으로 표시한다.
+function costDeltaBadgeAmount(cur, prev){
+  if (cur === null || cur === undefined || prev === null || prev === undefined) return `<span class="delta-badge flat">-</span>`;
+  const diff = cur - prev;
+  const cls = diff > 0 ? 'neg' : 'pos';
+  return `<span class="delta-badge ${cls}">${diff >= 0 ? '+' : ''}${fmtWon(diff)}</span>`;
+}
+function renderCostSnapshot(){
+  const {cur, prev, yoy} = getPeriods();
+  const PW = PREV_WORD();
+  const total = totalCostArr();
+  const tV = pSum(total, cur), tP = pSum(total, prev), tY = pSum(total, yoy);
+  const rNow = pRatio(total, cur), rPrev = pRatio(total, prev), rYoy = pRatio(total, yoy);
+  const pp = (a, b) => (a === null || b === null) ? null : (a - b) * 100;
+  const topHtml = `<div class="snap-metric">
+      <div class="label">총비용${isQ() ? ` (${cur.shortLabel} 합계)` : ` (${cur.label})`}</div>
+      <div class="value">${fmtWon(tV)}</div>
+      <div class="deltas">${costDeltaBadge(pctChange(tV, tP), PW + ' ')}${costDeltaBadgeAmount(tV, tP)}${costDeltaBadge(pctChange(tV, tY), '전년 ')}</div>
+    </div>
+    <div class="snap-metric bizdays">
+      <div class="label">비용률 (매출액 대비)</div>
+      <div class="value">${fmtPct(rNow)}</div>
+      <div class="deltas" style="justify-content:flex-end;">${costDeltaBadgePP(pp(rNow, rPrev), PW + ' ')}${costDeltaBadgePP(pp(rNow, rYoy), '전년 ')}</div>
+    </div>`;
+  const restHtml = ['노무비', '경비', '판관비'].map(mc => {
+    const arr = DATA.midcatTotals[mc];
+    const v = pSum(arr, cur), pv = pSum(arr, prev), yv = pSum(arr, yoy);
+    const share = (v !== null && tV) ? v / tV : null;
+    return `<div class="snap-metric">
+      <div class="label">${mc} <span style="font-weight:500;">· 총비용의 ${fmtPct(share, 0)}</span></div>
+      <div class="value">${fmtWon(v)}</div>
+      <div class="deltas">${costDeltaBadge(pctChange(v, pv), PW + ' ')}${costDeltaBadgeAmount(v, pv)}${costDeltaBadge(pctChange(v, yv), '전년 ')}</div>
+    </div>`;
+  }).join('');
+  const excl = oneoffExcludedIn(cur.startIdx, cur.endIdx, ['노무비', '경비', '판관비']);
+  const oneoffTxt = excl.list.length
+    ? ` 이 기간에는 일회성 비용 ${excl.list.map(e => `${escapeHtml(e.group)}·${escapeHtml(e.item)} ${fmtWon(e.amount)}${e.memo ? `(${escapeHtml(e.memo)})` : ''}`).join(', ')}이 포함돼 있습니다.`
+    : '';
+  document.getElementById('costSnapshot').innerHTML =
+    `<div class="snapshot-top">${topHtml}</div>
+    <div class="snapshot-rest" style="grid-template-columns:repeat(3,1fr);">${restHtml}</div>
+    <p class="snapshot-note">※ 총비용 = 노무비 + 경비 + 판관비 (영업외비용 제외). 비용은 늘면 빨간색, 줄면 초록색입니다.${cur.partial ? ` 진행 중인 분기(${cur.idxs.length}개월 누적)는 비교 대상도 같은 개월 수만 합산합니다.` : ''}${oneoffTxt}</p>`;
 }
 
 // 누적 실적 / 연말 예상 - 매출추이 탭 renderKPI와 같은 방식(현재 분기 월평균 × 잔여 개월)
