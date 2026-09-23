@@ -260,6 +260,72 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
   .cause-row .amt{text-align:left;}
 }
 
+/* page head + print button */
+.page-head{display:flex; justify-content:space-between; align-items:flex-end; gap:12px;}
+.print-btn{background:var(--surface); color:var(--text-secondary); border:1px solid var(--border); border-radius:8px; padding:8px 14px; font-size:12.5px; font-weight:700; cursor:pointer; font-family:inherit; margin-bottom:18px; white-space:nowrap;}
+.print-btn:hover{color:var(--text-primary); border-color:var(--baseline);}
+.print-only{display:none;}
+
+/* 손익분기 분석 */
+.bep-card{margin-top:16px;}
+.bep-head{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+.bep-draft{font-size:10.5px; font-weight:700; color:var(--text-muted); background:var(--surface-2); border:1px solid var(--border); border-radius:999px; padding:2px 9px;}
+.bep-tiles{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px;}
+.bep-tile{background:var(--surface-2); border-radius:10px; padding:12px 14px;}
+.bep-tile .label{font-size:11px; color:var(--text-muted); margin-bottom:5px;}
+.bep-tile .value{font-size:20px; font-weight:800; font-variant-numeric:tabular-nums;}
+.bep-tile .sub{font-size:10.5px; color:var(--text-muted); margin-top:4px; line-height:1.45;}
+.bep-bar{height:8px; background:var(--grid); border-radius:999px; overflow:hidden; margin-top:8px;}
+.bep-bar > div{height:100%; background:var(--text-secondary); border-radius:999px;}
+.bep-insight{font-size:12px; color:var(--text-secondary); background:var(--surface-2); border-radius:8px; padding:9px 12px; margin-bottom:14px; line-height:1.6;}
+.bep-charts{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+.bep-sub{font-size:12px; margin:0 0 6px; color:var(--text-secondary);}
+.bep-assume{margin-top:12px;}
+.bep-assume summary{font-size:11.5px; color:var(--text-muted); cursor:pointer;}
+.bep-assume-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:10px;}
+.bep-assume-grid h5{font-size:12px; margin:0 0 6px;}
+.bep-assume-grid table{width:100%; border-collapse:collapse; font-size:11.5px;}
+.bep-assume-grid td{padding:4px 0; border-bottom:1px solid var(--border); font-variant-numeric:tabular-nums;}
+.bep-assume-grid td:last-child{text-align:right;}
+@media (max-width:760px){
+  .bep-tiles{grid-template-columns:repeat(2,1fr);}
+  .bep-charts, .bep-assume-grid{grid-template-columns:1fr;}
+  .page-head{align-items:flex-start;}
+}
+
+/* ---------- 인쇄 / PDF ---------- */
+@media print{
+  @page{size:A4; margin:12mm;}
+  html:root, html:root[data-theme]{
+    color-scheme:light;
+    --page:#ffffff; --surface:#ffffff; --surface-2:#f4f3f0; --text-primary:#0b0b0b; --text-secondary:#52514e;
+    --text-muted:#6e6d68; --grid:#e1e0d9; --baseline:#c3c2b7; --border:rgba(11,11,11,0.14);
+    --good:#006300; --bad:#d03b3b; --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+    --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948; --refmark:#8956d6;
+  }
+  *{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  body{background:#fff; font-size:12px;}
+  .wrap{max-width:none; padding:0;}
+  .print-only{display:block;}
+  .print-header{font-size:11px; color:var(--text-muted); margin:-4px 0 12px;}
+  #pinGate, .tooltip, .tabs, .admin-panel, .print-btn, .ref-bar select, .period-toggle, .ref-note,
+  .rich-toolbar, .note-actions, .subsec-chevron, .bep-assume summary, .page-head .subtitle{display:none!important;}
+  .ref-bar{position:static; border:none; padding:0; margin:0 0 10px;}
+  .ref-bar .ref-label{display:none;}
+  .tab-section{display:block!important; break-before:page;}
+  #sec1{break-before:auto;}
+  .card, .kpi-group, .anomaly-card, .cause-card, .bep-tile, tr{break-inside:avoid;}
+  .chart-scroll{overflow:visible!important;}
+  .chart-scroll svg{width:100%!important; height:auto!important;}
+  .chart-row, .bep-charts{grid-template-columns:1fr!important;}
+  .rich-editor{border:none; padding:0; min-height:0!important; resize:none;}
+  .note-box:has(.rich-editor:empty){display:none;}
+  details.subsec:not([open]) > summary{border-bottom:none;}
+  .bep-assume > *:not(summary){display:block;}
+  .chip:not(.active){display:none;}
+  section{margin-bottom:0;}
+}
+
 /* pin gate */
 #pinGate{position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; background:var(--page);}
 #pinGate .gate-card{width:100%; max-width:320px; padding:28px 24px; text-align:center;}
@@ -299,8 +365,14 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
 </div>
 
 <div class="wrap" id="mainApp" hidden>
-  <h1>스테리케어 손익 대시보드</h1>
-  <p class="subtitle">2025.1 ~ 2026.12 · 팀에서 업로드한 최신 엑셀 데이터 기준</p>
+  <div class="page-head">
+    <div>
+      <h1>스테리케어 손익 대시보드</h1>
+      <p class="subtitle">2025.1 ~ 2026.12 · 팀에서 업로드한 최신 엑셀 데이터 기준</p>
+    </div>
+    <button type="button" class="print-btn" id="printBtn" title="전체 탭을 한 번에 인쇄하거나 PDF로 저장합니다">인쇄 / PDF 저장</button>
+  </div>
+  <div class="print-only print-header" id="printHeader"></div>
 
   <div class="ref-bar">
     <span class="ref-label" id="refLabel">기준월</span>
@@ -341,6 +413,34 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
     </div>
   </section>
 
+  <section id="sec5" class="tab-section" hidden>
+    <div class="section-head"><span class="section-num">2</span><h2>매출 세부</h2></div>
+    <p class="section-sub">세탁 매출과 Regen75 가운 매출을 각각 별도로 추적합니다.</p>
+
+    <div class="subsection-head"><span class="subsection-num">1</span><h3 class="period-note-title">당월 특이사항</h3></div>
+    <div class="card" id="revenueNote" style="margin-bottom:28px;"></div>
+
+    <div class="subsection-head"><span class="subsection-num">2</span><h3>세탁 매출</h3></div>
+    <p class="section-sub" style="margin:0 0 12px;">일반세탁물 매출 - 부천·인천세종병원은 일반세탁물만, 파주·일산중심재활·뉴고려병원은 매출 전체(어차피 일반세탁물뿐입니다).</p>
+    <div class="card" id="laundrySnapshot" style="margin-bottom:16px;"></div>
+    <div class="card" style="margin-bottom:16px;">
+      <h3 style="font-size:13px;margin:0 0 8px;">매출원별 세탁매출 추이</h3>
+      <div class="chart-scroll"><svg id="chartLaundry" width="1020" height="240"></svg></div>
+      <div class="legend" id="legLaundry"></div>
+    </div>
+    <div class="card quarter-only" id="laundryQuarterTable" style="margin-bottom:28px;"></div>
+
+    <div class="subsection-head"><span class="subsection-num">3</span><h3>Regen75 가운 매출</h3></div>
+    <p class="section-sub" style="margin:0 0 12px;">렌탈가운_멸균 · 렌탈가운_비멸균 · 렌탈 멸균 프로텍트커버 매출(인천세종병원·부천세종병원 합산).</p>
+    <div class="card" id="gownSnapshot" style="margin-bottom:16px;"></div>
+    <div class="card" style="margin-bottom:16px;">
+      <h3 style="font-size:13px;margin:0 0 8px;">가운별 매출 추이</h3>
+      <div class="chart-scroll"><svg id="chartGown" width="1020" height="240"></svg></div>
+      <div class="legend" id="legGown"></div>
+    </div>
+    <div class="card quarter-only" id="gownQuarterTable" style="margin-bottom:20px;"></div>
+  </section>
+
   <section id="sec6" class="tab-section" hidden>
     <div class="section-head"><span class="section-num">3</span><h2>비용 추이</h2></div>
     <p class="section-sub">총비용 = 노무비 + 경비 + 판관비 (영업외비용 제외) · 비용률 = 매출액 대비 총비용 비중</p>
@@ -355,6 +455,30 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
         <div class="chart-scroll"><svg id="chartCost" width="1020" height="260"></svg></div>
         <div class="legend" id="legCost"></div>
       </div>
+    </div>
+
+    <div class="card bep-card" id="bepCard">
+      <div class="bep-head">
+        <h3 style="font-size:13px;margin:0;">손익분기 분석</h3>
+        <span class="bep-draft">초안 · 고정비/변동비 분류 확인 필요</span>
+      </div>
+      <div id="bepTiles"></div>
+      <div class="bep-charts">
+        <div>
+          <h4 class="bep-sub">매출 규모별 손익 구조</h4>
+          <div class="chart-scroll"><svg id="chartBepCvp" width="500" height="260"></svg></div>
+          <div class="legend" id="legBepCvp"></div>
+        </div>
+        <div>
+          <h4 class="bep-sub">월별 매출 vs 손익분기 매출</h4>
+          <div class="chart-scroll"><svg id="chartBepTrend" width="500" height="260"></svg></div>
+          <div class="legend" id="legBepTrend"></div>
+        </div>
+      </div>
+      <details class="bep-assume">
+        <summary>계산 근거 (고정비 · 변동비 분류) 보기</summary>
+        <div id="bepAssume"></div>
+      </details>
     </div>
   </section>
 
@@ -422,33 +546,6 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
     <div class="card" id="agendaNotes" style="margin-bottom:28px;"></div>
   </section>
 
-  <section id="sec5" class="tab-section" hidden>
-    <div class="section-head"><span class="section-num">2</span><h2>매출 세부</h2></div>
-    <p class="section-sub">세탁 매출과 Regen75 가운 매출을 각각 별도로 추적합니다.</p>
-
-    <div class="subsection-head"><span class="subsection-num">1</span><h3 class="period-note-title">당월 특이사항</h3></div>
-    <div class="card" id="revenueNote" style="margin-bottom:28px;"></div>
-
-    <div class="subsection-head"><span class="subsection-num">2</span><h3>세탁 매출</h3></div>
-    <p class="section-sub" style="margin:0 0 12px;">일반세탁물 매출 - 부천·인천세종병원은 일반세탁물만, 파주·일산중심재활·뉴고려병원은 매출 전체(어차피 일반세탁물뿐입니다).</p>
-    <div class="card" id="laundrySnapshot" style="margin-bottom:16px;"></div>
-    <div class="card" style="margin-bottom:16px;">
-      <h3 style="font-size:13px;margin:0 0 8px;">매출원별 세탁매출 추이</h3>
-      <div class="chart-scroll"><svg id="chartLaundry" width="1020" height="240"></svg></div>
-      <div class="legend" id="legLaundry"></div>
-    </div>
-    <div class="card quarter-only" id="laundryQuarterTable" style="margin-bottom:28px;"></div>
-
-    <div class="subsection-head"><span class="subsection-num">3</span><h3>Regen75 가운 매출</h3></div>
-    <p class="section-sub" style="margin:0 0 12px;">렌탈가운_멸균 · 렌탈가운_비멸균 · 렌탈 멸균 프로텍트커버 매출(인천세종병원·부천세종병원 합산).</p>
-    <div class="card" id="gownSnapshot" style="margin-bottom:16px;"></div>
-    <div class="card" style="margin-bottom:16px;">
-      <h3 style="font-size:13px;margin:0 0 8px;">가운별 매출 추이</h3>
-      <div class="chart-scroll"><svg id="chartGown" width="1020" height="240"></svg></div>
-      <div class="legend" id="legGown"></div>
-    </div>
-    <div class="card quarter-only" id="gownQuarterTable" style="margin-bottom:20px;"></div>
-  </section>
 
   <p class="note" id="footnote"></p>
 
@@ -900,6 +997,7 @@ function renderTabContent(tab){
     renderCostKPI();
     renderCostQuarterlyTable();
     renderCostChart();
+    renderBEP();
   } else if (tab === 'sec7'){
     renderPeriodNote('costNote', 'cost_note', '비용 특이사항', '이 기간 비용 측면의 특이사항을 남겨주세요.');
     renderAnomalyTop4();
@@ -926,7 +1024,7 @@ function renderTabContent(tab){
 // 초안(매출 세부·비용 세부·종합의견 칸)이 날아가기 때문.
 function redrawCharts(tab){
   if (tab === 'sec1') renderSec1Charts();
-  else if (tab === 'sec6') renderCostChart();
+  else if (tab === 'sec6'){ renderCostChart(); renderBEP(); }
   else if (tab === 'sec7'){ renderRatioChart(); renderMidcatChart(); renderExpenseTrendChart(); }
   else if (tab === 'sec5'){ renderLaundryChart(); renderGownChart(); }
 }
@@ -948,6 +1046,119 @@ function costDeltaBadgePP(v, prefix){
   const cls = v > 0 ? 'neg' : 'pos';
   return `<span class="delta-badge ${cls}"><span class="k">${prefix}</span>${v>=0?'▲':'▼'}${Math.abs(v).toFixed(1)}%p</span>`;
 }
+// ================= 손익분기 분석 (비용추이 탭, 초안) =================
+// 영업이익 기준 손익분기 = 고정비 ÷ (1 − 변동비율). 영업외비용(이자)은 제외.
+// 변동비 = 세탁 처리량(=매출)에 따라 움직이는 경비 소분류. 나머지(급여·감가상각·임차료·운반비 계약금액·
+// 본사 판관비 배부 등)는 매출이 늘어도 거의 그대로라 고정비로 본다. 담당자 확인 전 초안 분류.
+const BEP_VARIABLE_ITEMS = ['수도광열비','전력비','소모품비','외주용역비'];
+function isBepVariable(it){ return it.group === '경비' && BEP_VARIABLE_ITEMS.includes(it.name); }
+// idxs 구간의 "월평균" 기준으로 계산. 일회성으로 지정된 비용은 고정비에서 뺀다.
+function bepForIdxs(idxs){
+  const n = idxs.length;
+  const cfg = oneoffConfig();
+  const rev = idxs.reduce((s,i) => s + (DATA.revenue[i] || 0), 0) / n;
+  let oneoffTotal = 0;
+  const items = [...LABOR_ITEMS, ...EXP_ITEMS, ...SGA_ITEMS].map(it => {
+    const raw = idxs.reduce((s,i) => s + (it.amounts[i] || 0), 0);
+    const ex = cfg.excluded.filter(e => e.group === it.group && e.item === it.name)
+      .map(e => ymToIdx(e.ym)).filter(i => idxs.includes(i))
+      .reduce((s,i) => s + (it.amounts[i] || 0), 0);
+    oneoffTotal += ex / n;
+    return {group: it.group, name: it.name, amount: (raw - ex) / n, variable: isBepVariable(it)};
+  }).filter(x => Math.abs(x.amount) > 0.5);
+  const variable = items.filter(x => x.variable).reduce((s,x) => s + x.amount, 0);
+  const fixed = items.filter(x => !x.variable).reduce((s,x) => s + x.amount, 0);
+  const vRatio = rev ? variable / rev : null;
+  const bep = (vRatio !== null && vRatio < 1) ? fixed / (1 - vRatio) : null;
+  return {rev, variable, fixed, vRatio, bep, items, oneoffTotal};
+}
+function renderBEP(){
+  const {cur} = getPeriods();
+  const b = bepForIdxs(cur.idxs);
+  const periodTxt = cur.idxs.length > 1 ? `${cur.label} 월평균` : cur.label;
+  const rate = b.bep ? b.rev / b.bep : null;
+  const gap = b.bep !== null ? b.bep - b.rev : null;
+  const margin = b.vRatio !== null ? 1 - b.vRatio : null;
+  document.getElementById('bepTiles').innerHTML = `
+    <div class="bep-tiles">
+      <div class="bep-tile"><div class="label">손익분기 월매출</div><div class="value">${fmtWon(b.bep)}</div>
+        <div class="sub">고정비 ${fmtWon(b.fixed)} ÷ (1 − 변동비율 ${fmtPct(b.vRatio)})</div></div>
+      <div class="bep-tile"><div class="label">현재 월매출 (${periodTxt})</div><div class="value">${fmtWon(b.rev)}</div>
+        <div class="sub">변동비 ${fmtWon(b.variable)} · 고정비 ${fmtWon(b.fixed)}</div></div>
+      <div class="bep-tile"><div class="label">손익분기 달성률</div><div class="value">${rate === null ? '-' : fmtPct(rate, 0)}</div>
+        <div class="bep-bar"><div style="width:${rate === null ? 0 : Math.min(100, rate*100).toFixed(1)}%"></div></div></div>
+      <div class="bep-tile"><div class="label">${gap !== null && gap <= 0 ? '손익분기 초과 매출' : '흑자 전환까지 필요한 월매출'}</div>
+        <div class="value">${gap === null ? '-' : (gap > 0 ? '+' : '') + fmtWon(Math.abs(gap))}</div>
+        <div class="sub">${gap !== null && gap > 0 && b.rev ? `현재보다 ${fmtPct(gap / b.rev, 0)} 더 필요` : ''}</div></div>
+    </div>
+    ${margin !== null ? `<div class="bep-insight">매출이 월 1,000만원 늘면 영업이익은 약 <b>${fmtWon(1e7 * margin)}</b> 개선됩니다 (변동비율 ${fmtPct(b.vRatio)} 기준, 나머지는 고정비라 그대로).${b.oneoffTotal ? ` 일회성으로 지정된 비용(월평균 ${fmtWon(b.oneoffTotal)})은 고정비에서 제외했습니다.` : ''}</div>` : ''}`;
+
+  drawBepCvp(b);
+  // 월별 손익분기 매출 추이 (각 달의 고정비·변동비율로 계산)
+  const n = ACTUAL_CUTOFF_IDX + 1;
+  const bepSeries = [];
+  for (let i = 0; i < n; i++) bepSeries.push(bepForIdxs([i]).bep);
+  const series = [
+    {name:'월 매출', color:'var(--s1)', data: DATA.revenue.slice(0, n)},
+    {name:'손익분기 매출', color:'var(--text-secondary)', data: bepSeries},
+  ];
+  drawLineChart('chartBepTrend', series, buildMonthLabels(n), {moneyAxis:true, ...chartHighlight()});
+  renderLegend('legBepTrend', series.map(({name,color}) => ({name,color})));
+
+  const rowsOf = list => list.sort((x,y) => y.amount - x.amount)
+    .map(x => `<tr><td>${escapeHtml(x.group)} · ${escapeHtml(x.name)}</td><td>${fmtWon(x.amount)}</td></tr>`).join('');
+  document.getElementById('bepAssume').innerHTML = `
+    <div class="bep-assume-grid">
+      <div><h5>변동비 (매출·처리량에 따라 변동) — 월 ${fmtWon(b.variable)}</h5><table>${rowsOf(b.items.filter(x => x.variable))}</table></div>
+      <div><h5>고정비 (매출과 무관하게 발생) — 월 ${fmtWon(b.fixed)}</h5><table>${rowsOf(b.items.filter(x => !x.variable))}</table></div>
+    </div>
+    <p class="note">※ ${periodTxt} 기준 · 영업이익(판관비 차감 후) 기준이며 영업외비용(이자)은 제외했습니다. 분류는 초안이며, 담당자 확인 후 조정이 필요합니다.</p>`;
+}
+// 매출 규모(x)별 매출선·총비용선·고정비선 - 두 선이 만나는 점이 손익분기
+function drawBepCvp(b){
+  const svg = document.getElementById('chartBepCvp');
+  const W = svg.clientWidth || parseInt(svg.getAttribute('width'));
+  const H = parseInt(svg.getAttribute('height'));
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = '';
+  const legend = document.getElementById('legBepCvp');
+  if (!b.bep || !b.rev){ legend.innerHTML = ''; return; }
+  const padL = 54, padR = 14, padT = 14, padB = 30;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const xMax = Math.max(b.bep, b.rev) * 1.3;
+  const yMax = Math.max(xMax, b.fixed + b.vRatio * xMax) * 1.02;
+  const xAt = v => padL + v / xMax * plotW;
+  const yAt = v => padT + plotH - v / yMax * plotH;
+  const ns = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs, text) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text) e.textContent = text; svg.appendChild(e); return e; };
+  const axisLbl = v => Math.round(v / 1e7) / 10 + '억';
+  for (let g = 0; g <= 4; g++){
+    const v = yMax * g / 4;
+    el('line', {x1:padL, x2:W-padR, y1:yAt(v), y2:yAt(v), stroke:'var(--grid)', 'stroke-width':1});
+    el('text', {x:padL-8, y:yAt(v)+3, 'text-anchor':'end', fill:'var(--text-muted)', 'font-size':10}, axisLbl(v));
+    const xv = xMax * g / 4;
+    el('text', {x:xAt(xv), y:H-10, 'text-anchor':'middle', fill:'var(--text-muted)', 'font-size':10}, axisLbl(xv));
+  }
+  // 손실/이익 구간 음영
+  const costAt = x => b.fixed + b.vRatio * x;
+  el('path', {d:`M${xAt(0)} ${yAt(0)} L${xAt(b.bep)} ${yAt(b.bep)} L${xAt(b.bep)} ${yAt(costAt(b.bep))} L${xAt(0)} ${yAt(costAt(0))} Z`, fill:'var(--bad)', opacity:0.08});
+  el('path', {d:`M${xAt(b.bep)} ${yAt(b.bep)} L${xAt(xMax)} ${yAt(xMax)} L${xAt(xMax)} ${yAt(costAt(xMax))} Z`, fill:'var(--good)', opacity:0.10});
+  el('line', {x1:xAt(0), x2:xAt(xMax), y1:yAt(b.fixed), y2:yAt(b.fixed), stroke:'var(--text-muted)', 'stroke-width':1.5, 'stroke-dasharray':'4,4'});
+  el('line', {x1:xAt(0), x2:xAt(xMax), y1:yAt(costAt(0)), y2:yAt(costAt(xMax)), stroke:'var(--s2)', 'stroke-width':2});
+  el('line', {x1:xAt(0), x2:xAt(xMax), y1:yAt(0), y2:yAt(xMax), stroke:'var(--s1)', 'stroke-width':2});
+  // 현재 위치
+  el('line', {x1:xAt(b.rev), x2:xAt(b.rev), y1:padT, y2:padT+plotH, stroke:'var(--refmark)', 'stroke-width':1.5, 'stroke-dasharray':'3,3'});
+  el('circle', {cx:xAt(b.rev), cy:yAt(b.rev), r:4, fill:'var(--refmark)'});
+  el('text', {x:xAt(b.rev)+6, y:padT+10, fill:'var(--refmark)', 'font-size':10.5, 'font-weight':700}, `현재 ${fmtWon(b.rev)}`);
+  // 손익분기점
+  el('circle', {cx:xAt(b.bep), cy:yAt(b.bep), r:5, fill:'var(--surface)', stroke:'var(--text-primary)', 'stroke-width':2});
+  el('text', {x:xAt(b.bep)-8, y:yAt(b.bep)-10, 'text-anchor':'end', fill:'var(--text-primary)', 'font-size':10.5, 'font-weight':800}, `손익분기 ${fmtWon(b.bep)}`);
+  legend.innerHTML = [
+    ['매출', 'var(--s1)'], ['총비용 (고정비+변동비)', 'var(--s2)'], ['고정비', 'var(--text-muted)'], [REF_WORD(), 'var(--refmark)'],
+  ].map(([nm, c]) => `<span><span class="dot" style="background:${c}"></span>${nm}</span>`).join('') +
+    `<span><span class="dot" style="background:var(--bad);opacity:.35"></span>손실 구간</span><span><span class="dot" style="background:var(--good);opacity:.4"></span>이익 구간</span>`;
+}
+
 // ================= 일회성 비용 (연말 예상 추세에서 제외) =================
 // 담당자가 "데이터 관리"에서 지정한다. standing_notes의 'oneoff_config' key에 JSON으로 저장:
 //   excluded: [{ym:"26-8", group:"판관비", item:"광고선전비", memo}]  - 실적은 그대로 두고, 추세(분기 월평균)
@@ -2271,6 +2482,33 @@ function bindCollapsibles(){
     });
   });
 }
+// ---------- 인쇄 / PDF 저장 ----------
+// 탭으로 나뉜 내용을 한 번에 출력하기 위해, 인쇄 직전에 모든 탭·접힌 섹션을 펼쳐 그리고
+// 인쇄 대화상자가 닫히면 원래 화면 상태로 되돌린다. PDF는 인쇄 대화상자에서 "PDF로 저장" 선택.
+const PRINT_TAB_ORDER = ['sec1','sec5','sec6','sec7','sec4'];
+function printReport(){
+  const prevTab = activeTab;
+  const detailsState = [...document.querySelectorAll('details.subsec, details.bep-assume')].map(d => [d, d.open]);
+  const prevTitle = document.title;
+  const {cur} = getPeriods();
+  document.querySelectorAll('.tab-section').forEach(s => { s.hidden = false; });
+  detailsState.forEach(([d]) => { d.open = true; });
+  PRINT_TAB_ORDER.forEach(t => { activeTab = t; renderTabContent(t); });
+  activeTab = prevTab;
+  const today = new Date();
+  const ymd = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  document.getElementById('printHeader').textContent = `${cur.label} 기준 · 출력일 ${ymd}`;
+  document.title = `스테리케어_손익보고서_${cur.key}`;
+  const restore = () => {
+    window.removeEventListener('afterprint', restore);
+    document.title = prevTitle;
+    detailsState.forEach(([d, open]) => { d.open = open; });
+    switchTab(prevTab);
+  };
+  window.addEventListener('afterprint', restore);
+  // 펼친 섹션의 차트 폭이 잡힌 뒤 인쇄
+  requestAnimationFrame(() => { PRINT_TAB_ORDER.forEach(t => redrawCharts(t)); window.print(); });
+}
 let dashboardStarted = false;
 function startDashboard(){
   try {
@@ -2293,6 +2531,7 @@ function startDashboard(){
     initTabs();
     window.addEventListener('resize', () => redrawCharts(activeTab));
     bindCollapsibles();
+    document.getElementById('printBtn').addEventListener('click', printReport);
     dashboardStarted = true;
   }
   populateRefSelect();
