@@ -86,12 +86,21 @@ h1{font-size:20px; font-weight:700; margin:0 0 4px; padding-top:28px;}
 #sec3 .section-num{background:var(--s5);}
 #sec4 .section-num{background:var(--s8);}
 #sec5 .section-num{background:var(--s6);}
+#sec6 .section-num{background:var(--s2);}
+#sec7 .section-num{background:var(--s7);}
 h2{font-size:20px; font-weight:800; margin:0; letter-spacing:-.01em;}
 .section-sub{color:var(--text-muted); font-size:12px; margin:8px 0 16px;}
 .subsection-head{display:flex; align-items:center; gap:10px; margin:24px 0 12px;}
 .subsection-head:first-of-type{margin-top:4px;}
 .subsection-num{display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; background:var(--s8); color:#fff; font-size:12px; font-weight:800; flex-shrink:0;}
 .subsection-head h3{font-size:18px; font-weight:800; margin:0; letter-spacing:-.01em;}
+details.subsec > summary{list-style:none; cursor:pointer; user-select:none;}
+details.subsec > summary::-webkit-details-marker{display:none;}
+details.subsec > summary:hover h3{color:var(--text-secondary);}
+.subsec-chevron{margin-left:auto; width:28px; height:28px; border-radius:50%; background:var(--surface-2); border:1px solid var(--border); display:inline-flex; align-items:center; justify-content:center;}
+.subsec-chevron::before{content:''; width:7px; height:7px; border-right:2px solid var(--text-secondary); border-bottom:2px solid var(--text-secondary); transform:rotate(45deg); margin-top:-3px; transition:transform .15s;}
+details.subsec[open] > summary .subsec-chevron::before{transform:rotate(-135deg); margin-top:3px;}
+details.subsec:not([open]) > summary{margin-bottom:16px; padding-bottom:12px; border-bottom:1px dashed var(--border);}
 section{margin-bottom:44px; padding-top:6px;}
 .card{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 18px;}
 
@@ -107,6 +116,9 @@ section{margin-bottom:44px; padding-top:6px;}
 .ref-pill{display:inline-flex; align-items:center; gap:6px; background:color-mix(in srgb, var(--refmark) 14%, var(--surface)); border:1px solid color-mix(in srgb, var(--refmark) 40%, var(--border)); color:var(--refmark); font-weight:800; font-size:13px; padding:6px 14px; border-radius:999px;}
 .ref-pill .tag{font-weight:600; font-size:10.5px; color:var(--text-muted); background:var(--surface-2); border-radius:999px; padding:2px 8px; margin-left:2px;}
 .ref-note{width:100%; font-size:11px; color:var(--text-muted); margin-top:-2px;}
+.period-toggle{display:inline-flex; margin-left:auto; background:var(--surface-2); border:1px solid var(--border); border-radius:999px; padding:3px;}
+.period-toggle button{background:none; border:none; border-radius:999px; padding:6px 16px; font-size:12.5px; font-weight:700; color:var(--text-muted); cursor:pointer; font-family:inherit;}
+.period-toggle button.active{background:var(--surface); color:var(--text-primary); box-shadow:0 1px 3px rgba(0,0,0,0.12);}
 
 /* snapshot card */
 .snapshot-card{margin-bottom:24px;}
@@ -121,8 +133,10 @@ section{margin-bottom:44px; padding-top:6px;}
 .snap-metric .value{font-size:19px; font-weight:800; font-variant-numeric:tabular-nums; margin-bottom:8px;}
 .snap-metric .deltas{display:flex; gap:6px; flex-wrap:wrap;}
 .snapshot-note{font-size:10.5px; color:var(--text-muted); margin:12px 0 0; line-height:1.5;}
-.snapshot-formula{font-variant-numeric:tabular-nums;}
-.snapshot-formula + .snapshot-note{margin-top:8px; padding-top:8px; border-top:1px solid var(--border);}
+/* 계산식·주석 박스 - 위 지표 숫자들과 확실히 떨어지도록 여백 + 옅은 배경으로 구분 */
+.snapshot-formula{font-variant-numeric:tabular-nums; margin-top:28px; padding:12px 14px; background:var(--surface-2); border-radius:8px; line-height:1.7;}
+.snapshot-formula + .snapshot-note{margin-top:0; padding:0 14px 12px; background:var(--surface-2); border-radius:0 0 8px 8px;}
+.snapshot-formula:has(+ .snapshot-note){border-radius:8px 8px 0 0;}
 .delta-badge{display:inline-flex; align-items:center; gap:3px; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; font-variant-numeric:tabular-nums;}
 .delta-badge.pos{background:color-mix(in srgb, var(--good) 16%, transparent); color:var(--good);}
 .delta-badge.neg{background:color-mix(in srgb, var(--bad) 16%, transparent); color:var(--bad);}
@@ -130,9 +144,11 @@ section{margin-bottom:44px; padding-top:6px;}
 .delta-badge .k{opacity:.75; font-weight:600;}
 
 .kpi-groups{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px;}
-.kpi-group{border-radius:14px; padding:14px 16px 6px; border:1px solid var(--border);}
-.kpi-group.g-actual{background:color-mix(in srgb, var(--s1) 6%, var(--surface)); border-left:4px solid var(--s1);}
-.kpi-group.g-proj{background:color-mix(in srgb, var(--s2) 7%, var(--surface)); border-left:4px solid var(--s2); border-style:dashed;}
+/* 누적 실적 / 연말 예상 - 다른 카드와 같은 무채색. 예상은 점선 테두리로만 "추정치"임을 구분 */
+.kpi-group{border-radius:14px; padding:14px 16px 6px; border:1px solid var(--border); background:var(--surface);}
+.kpi-group.g-proj{border-style:dashed; border-color:var(--baseline);}
+.kpi-group .kpi{background:var(--surface-2);}
+.kpi-group-label .dot{display:none;}
 .kpi-group-label{display:flex; align-items:center; gap:7px; font-size:12px; font-weight:700; color:var(--text-secondary); margin-bottom:10px;}
 .kpi-group-label .dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
 .kpi-row{display:grid; grid-template-columns:repeat(2,1fr); gap:10px;}
@@ -149,10 +165,10 @@ section{margin-bottom:44px; padding-top:6px;}
 .compare-table td:first-child{text-align:left; font-weight:700;}
 .compare-table tr:last-child td{border-bottom:none;}
 .compare-table th.qt-group{text-align:center; font-size:13px; padding:8px 10px;}
-.compare-table th.qt-group.qt-rev{background:color-mix(in srgb, var(--s1) 16%, var(--surface)); color:var(--s1);}
-.compare-table th.qt-group.qt-gp{background:color-mix(in srgb, var(--s2) 16%, var(--surface)); color:var(--s2);}
-.compare-table td.qt-rev-val{font-weight:800; color:var(--s1);}
-.compare-table td.qt-gp-val{font-weight:800; color:var(--s2);}
+/* 분기별 표 그룹 머리글·26년 값 - 무채색(굵기로만 강조) */
+.compare-table th.qt-group{background:var(--surface-2); color:var(--text-primary); border-bottom:1px solid var(--baseline);}
+.compare-table th.qt-group.qt-gp{border-left:2px solid var(--page);}
+.compare-table td.qt-rev-val, .compare-table td.qt-gp-val{font-weight:800; color:var(--text-primary);}
 .compare-table th.qt-year-current{font-size:12.5px; font-weight:800; color:var(--refmark);}
 .compare-table tr.current-quarter{background:color-mix(in srgb, var(--refmark) 9%, transparent);}
 .compare-table tr.current-quarter td:first-child{color:var(--refmark); font-weight:800;}
@@ -244,8 +260,12 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
 #mainApp.loading::before{content:'불러오는 중…'; display:block; text-align:center; padding:80px 0; color:var(--text-muted); font-size:13px;}
 #mainApp.loading > *{display:none;}
 
-/* upload card */
-.upload-card{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px;}
+/* upload card - 임원 열람용 화면이라 맨 아래 접힌 "데이터 관리" 영역 안에 둔다 */
+.admin-panel{margin-top:36px; border-top:1px solid var(--border); padding-top:14px;}
+.admin-panel summary{font-size:11.5px; color:var(--text-muted); cursor:pointer; user-select:none; width:max-content;}
+.admin-panel summary:hover{color:var(--text-secondary);}
+.admin-panel[open] summary{margin-bottom:10px;}
+.upload-card{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
 .upload-card select, .upload-card input[type=file]{font-size:12.5px;}
 .upload-card input[type=file]{color:var(--text-secondary); max-width:220px;}
 .upload-card button{background:var(--s1); color:#fff; border:none; border-radius:7px; padding:8px 16px; font-size:12.5px; font-weight:700; cursor:pointer; font-family:inherit;}
@@ -269,38 +289,35 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
   <h1>스테리케어 손익 대시보드</h1>
   <p class="subtitle">2025.1 ~ 2026.12 · 팀에서 업로드한 최신 엑셀 데이터 기준</p>
 
-  <div class="card upload-card">
-    <span class="ref-label">엑셀 업로드</span>
-    <select id="uploadYear"><option value="26">26년</option><option value="25">25년</option></select>
-    <input type="file" id="uploadFile" accept=".xlsx" />
-    <button id="uploadBtn">업로드</button>
-    <span class="upload-status" id="uploadStatus"></span>
-  </div>
-
   <div class="ref-bar">
-    <span class="ref-label">기준월</span>
+    <span class="ref-label" id="refLabel">기준월</span>
     <select id="refMonthSel"></select>
+    <select id="refQuarterSel" hidden></select>
     <span class="ref-pill" id="refPill"></span>
-    <span class="ref-note">※ 기준월을 바꾸면 아래 스냅샷 비교·누적/연간 예상·차트 강조선·하단 상세 내역이 모두 이 달 기준으로 함께 바뀝니다.</span>
+    <div class="period-toggle" id="periodToggle">
+      <button type="button" data-mode="month" class="active">월별</button>
+      <button type="button" data-mode="quarter">분기별</button>
+    </div>
+    <span class="ref-note" id="refNote"></span>
   </div>
 
   <div class="card snapshot-card" id="snapshotCard"></div>
 
+  <div class="kpi-groups" id="kpiRow"></div>
+  <div class="card quarter-only" id="quarterlyTable" style="margin-bottom:24px;"></div>
+
   <div class="tabs" id="tabNav">
     <button class="tab-btn active" data-tab="sec1">매출추이</button>
     <button class="tab-btn" data-tab="sec5">매출 세부</button>
-    <button class="tab-btn" data-tab="sec4">당월 특이사항 및 원인분석</button>
-    <button class="tab-btn" data-tab="sec2">매출대비 비용</button>
-    <button class="tab-btn" data-tab="sec3">경비 항목별 추이</button>
+    <button class="tab-btn" data-tab="sec6">비용추이</button>
+    <button class="tab-btn" data-tab="sec7">비용 세부</button>
+    <button class="tab-btn" data-tab="sec4">종합의견</button>
   </div>
 
   <section id="sec1" class="tab-section">
     <div class="section-head"><span class="section-num">1</span><h2>매출 &amp; 손익 추이</h2></div>
     <p class="section-sub">매출액 · 영업이익 · 당기순이익</p>
 
-    <div class="kpi-groups" id="kpiRow"></div>
-
-    <div class="card" id="quarterlyTable" style="margin-bottom:16px;"></div>
 
     <div class="chart-row">
       <div class="card" style="grid-column:1 / -1;">
@@ -311,10 +328,45 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
     </div>
   </section>
 
-  <section id="sec2" class="tab-section" hidden>
-    <div class="section-head"><span class="section-num">4</span><h2>매출액 대비 중분류 비중 &amp; 월별 세부 구성</h2></div>
-    <p class="section-sub">중분류: 노무비 · 경비 · 판관비 · 영업외비용 (매출 상세내역 제외)</p>
+  <section id="sec6" class="tab-section" hidden>
+    <div class="section-head"><span class="section-num">3</span><h2>비용 추이</h2></div>
+    <p class="section-sub">총비용 = 노무비 + 경비 + 판관비 (영업외비용 제외) · 비용률 = 매출액 대비 총비용 비중</p>
 
+    <div class="kpi-groups" id="costKpiRow"></div>
+
+    <div class="card quarter-only" id="costQuarterlyTable" style="margin-bottom:16px;"></div>
+
+    <div class="chart-row">
+      <div class="card" style="grid-column:1 / -1;">
+        <h3 style="font-size:13px;margin:0 0 8px;">월별 총비용 &amp; 노무비·경비·판관비</h3>
+        <div class="chart-scroll"><svg id="chartCost" width="1020" height="260"></svg></div>
+        <div class="legend" id="legCost"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sec7" class="tab-section" hidden>
+    <div class="section-head"><span class="section-num">4</span><h2>비용 세부</h2></div>
+    <p class="section-sub">TOP 3·원인 분석은 노무비·경비·판관비 소분류를 통합해서 봅니다 (매출 상세내역·영업외비용 제외).</p>
+
+    <details class="subsec" data-subsec="cost1" open>
+      <summary class="subsection-head"><span class="subsection-num">1</span><h3 class="period-note-title">당월 특이사항</h3><span class="subsec-chevron"></span></summary>
+    <div class="card" id="costNote" style="margin-bottom:28px;"></div>
+    </details>
+    <details class="subsec" data-subsec="cost2" open>
+      <summary class="subsection-head"><span class="subsection-num">2</span><h3>매출액 대비 비중 변동 TOP 3</h3><span class="subsec-chevron"></span></summary>
+    <div class="card" style="margin-bottom:28px;">
+      <div class="anomaly-row" id="anomalyRow"></div>
+    </div>
+    </details>
+    <details class="subsec" data-subsec="cost3" open>
+      <summary class="subsection-head"><span class="subsection-num">3</span><h3>원인 분석</h3><span class="subsec-chevron"></span></summary>
+    <p class="section-sub" style="margin:0 0 14px;" id="causeIntro"></p>
+    <div id="causeAnalysis" style="margin-bottom:28px;"></div>
+    </details>
+    <details class="subsec" data-subsec="cost4">
+      <summary class="subsection-head"><span class="subsection-num">4</span><h3>매출액 대비 중분류 비중 &amp; 세부 구성</h3><span class="subsec-chevron"></span></summary>
+    <p class="section-sub" style="margin:0 0 12px;">중분류: 노무비 · 경비 · 판관비 · 영업외비용 (매출 상세내역 제외)</p>
     <div class="chart-row">
       <div class="card" style="grid-column:1 / -1;">
         <h3 style="font-size:13px;margin:0 0 8px;">매출액 대비 노무비 · 수도광열비 비율</h3>
@@ -322,23 +374,18 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
         <div class="legend" id="legRatio"></div>
       </div>
     </div>
-
     <div class="card" id="keyMetricsTable" style="margin:16px 0;"></div>
-
     <div class="card">
       <h3 style="font-size:13px;margin:0 0 8px;">월별 매출액 대비 중분류 비중 (%)</h3>
       <div class="chart-scroll"><svg id="chartMidcat" width="1020" height="240"></svg></div>
       <div class="legend" id="legMidcat"></div>
     </div>
-
-    <p class="section-sub" style="margin-top:20px;">상단 기준월 선택에 따라 아래 상세 구성이 함께 바뀝니다.</p>
-    <div class="midcat-grid" id="drillGrid"></div>
-  </section>
-
-  <section id="sec3" class="tab-section" hidden>
-    <div class="section-head"><span class="section-num">5</span><h2>경비 항목별 추이</h2></div>
-    <p class="section-sub">경비(중분류) 내 소분류 항목들의 추이와, 기준월 vs 전월 구성 비중을 확인합니다.</p>
-
+    <p class="section-sub" style="margin-top:20px;">상단 기준월(또는 기준 분기) 선택에 따라 아래 상세 구성이 함께 바뀝니다.</p>
+    <div class="midcat-grid" id="drillGrid" style="margin-bottom:28px;"></div>
+    </details>
+    <details class="subsec" data-subsec="cost5">
+      <summary class="subsection-head"><span class="subsection-num">5</span><h3>경비 항목별 추이</h3><span class="subsec-chevron"></span></summary>
+    <p class="section-sub" style="margin:0 0 12px;">경비(중분류) 내 소분류 항목들의 추이와, 기준 기간 vs 직전 기간 구성 비중을 확인합니다.</p>
     <div class="card" style="margin-bottom:16px;">
       <h3 style="font-size:13px;margin:0 0 6px;">경비 항목별 추이 (기준월 이전 첫 실적월=100 지수)</h3>
       <p class="section-sub" style="margin:0 0 10px;">항목마다 금액 규모 차이가 커서 금액을 그대로 겹쳐 그리면 작은 항목이 묻히므로, 각 항목의 첫 실적월 금액을 100으로 두고 상대적인 증감 추이를 비교합니다. 아래 항목을 클릭해 표시할 항목을 켜고 끌 수 있습니다.</p>
@@ -346,35 +393,30 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
       <div class="chart-scroll" style="margin-top:10px;"><svg id="chartExpTrend" width="1020" height="260"></svg></div>
       <p class="note" id="expTrendEmpty" hidden>표시할 항목을 선택해주세요.</p>
     </div>
-
     <div class="card" id="expShareTable"></div>
+  
+    </details>
   </section>
 
   <section id="sec4" class="tab-section" hidden>
-    <div class="section-head"><span class="section-num">3</span><h2>당월 특이사항 및 원인분석</h2></div>
-    <p class="section-sub">노무비·경비 소분류를 통합해서 봅니다 (매출 상세내역·판관비·영업외비용 제외).</p>
+    <div class="section-head"><span class="section-num">5</span><h2>종합의견</h2></div>
+    <p class="section-sub">기준 기간 전체에 대한 종합의견과, 기간과 무관하게 유지되는 향후 도입 안건을 남깁니다.</p>
 
     <div class="subsection-head"><span class="subsection-num">1</span><h3>종합의견</h3></div>
     <div class="card" id="monthlyComment" style="margin-bottom:28px;"></div>
 
     <div class="subsection-head"><span class="subsection-num">2</span><h3>향후 도입 안건</h3></div>
     <div class="card" id="agendaNotes" style="margin-bottom:28px;"></div>
-
-    <div class="subsection-head"><span class="subsection-num">3</span><h3>매출액 대비 비중 변동 TOP 3</h3></div>
-    <div class="card" style="margin-bottom:28px;">
-      <div class="anomaly-row" id="anomalyRow"></div>
-    </div>
-
-    <div class="subsection-head"><span class="subsection-num">4</span><h3>원인 분석</h3></div>
-    <p class="section-sub" style="margin:0 0 14px;">각 항목 아래에 (A) 원본 장부의 거래처·상세내역 기준 전월 대비 변화 후보와, (B) 담당자가 남긴 메모를 함께 보여줍니다.</p>
-    <div id="causeAnalysis"></div>
   </section>
 
   <section id="sec5" class="tab-section" hidden>
     <div class="section-head"><span class="section-num">2</span><h2>매출 세부</h2></div>
     <p class="section-sub">세탁 매출과 Regen75 가운 매출을 각각 별도로 추적합니다.</p>
 
-    <div class="subsection-head"><span class="subsection-num">1</span><h3>세탁 매출</h3></div>
+    <div class="subsection-head"><span class="subsection-num">1</span><h3 class="period-note-title">당월 특이사항</h3></div>
+    <div class="card" id="revenueNote" style="margin-bottom:28px;"></div>
+
+    <div class="subsection-head"><span class="subsection-num">2</span><h3>세탁 매출</h3></div>
     <p class="section-sub" style="margin:0 0 12px;">일반세탁물 매출 - 부천·인천세종병원은 일반세탁물만, 파주·일산중심재활·뉴고려병원은 매출 전체(어차피 일반세탁물뿐입니다).</p>
     <div class="card" id="laundrySnapshot" style="margin-bottom:16px;"></div>
     <div class="card" style="margin-bottom:16px;">
@@ -382,9 +424,9 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
       <div class="chart-scroll"><svg id="chartLaundry" width="1020" height="240"></svg></div>
       <div class="legend" id="legLaundry"></div>
     </div>
-    <div class="card" id="laundryQuarterTable" style="margin-bottom:28px;"></div>
+    <div class="card quarter-only" id="laundryQuarterTable" style="margin-bottom:28px;"></div>
 
-    <div class="subsection-head"><span class="subsection-num">2</span><h3>Regen75 가운 매출</h3></div>
+    <div class="subsection-head"><span class="subsection-num">3</span><h3>Regen75 가운 매출</h3></div>
     <p class="section-sub" style="margin:0 0 12px;">렌탈가운_멸균 · 렌탈가운_비멸균 · 렌탈 멸균 프로텍트커버 매출(인천세종병원·부천세종병원 합산).</p>
     <div class="card" id="gownSnapshot" style="margin-bottom:16px;"></div>
     <div class="card" style="margin-bottom:16px;">
@@ -392,10 +434,21 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
       <div class="chart-scroll"><svg id="chartGown" width="1020" height="240"></svg></div>
       <div class="legend" id="legGown"></div>
     </div>
-    <div class="card" id="gownQuarterTable" style="margin-bottom:20px;"></div>
+    <div class="card quarter-only" id="gownQuarterTable" style="margin-bottom:20px;"></div>
   </section>
 
   <p class="note" id="footnote"></p>
+
+  <details class="admin-panel">
+    <summary>데이터 관리 (담당자용)</summary>
+    <div class="card upload-card">
+      <span class="ref-label">엑셀 업로드</span>
+      <select id="uploadYear"><option value="26">26년</option><option value="25">25년</option></select>
+      <input type="file" id="uploadFile" accept=".xlsx" />
+      <button id="uploadBtn">업로드</button>
+      <span class="upload-status" id="uploadStatus"></span>
+    </div>
+  </details>
 </div>
 
 <div class="tooltip" id="tooltip"></div>
@@ -446,6 +499,85 @@ function fmtPP(v, d){
 let ACTUAL_CUTOFF_IDX;
 let refIdx;
 let activeTab = 'sec1';
+// 월별/분기별 보기 - 분기별일 때는 refQStart(선택한 분기의 첫 달 index)가 기준이 된다.
+let periodMode = 'month';
+let refQStart;
+
+// ---------- 기준 기간(period) ----------
+// 월별·분기별 보기를 한 가지 모양으로 다루기 위해, 모든 스냅샷/표/상세 내역은 "기간 =
+// 월 index 묶음"으로 계산한다. 월별이면 [refIdx] 하나, 분기별이면 그 분기의 실적월들.
+// 진행 중인 분기(예: 3분기인데 7~8월만 마감)는 비교 대상(직전 분기·전년 동기)도 같은
+// 개월 수만 잘라서 비교한다 - 2개월치와 3개월치를 비교해 증감률이 왜곡되지 않게.
+function quarterOf(idx){ return Math.floor((DATA.months[idx].month - 1) / 3) + 1; }
+function quarterStartOf(idx){ return idx - ((DATA.months[idx].month - 1) % 3); }
+function quarterLabel(startIdx){ return `${DATA.months[startIdx].year}년 ${quarterOf(startIdx)}분기`; }
+function makeQuarterPeriod(startIdx, monthCount){
+  if (startIdx < 0) return null;
+  const idxs = [];
+  for (let i = 0; i < monthCount; i++) idxs.push(startIdx + i);
+  const m0 = DATA.months[startIdx];
+  const mEnd = DATA.months[startIdx + monthCount - 1];
+  const partial = monthCount < 3;
+  return {
+    type:'quarter', idxs, startIdx, endIdx: startIdx + monthCount - 1, partial,
+    label: quarterLabel(startIdx) + (partial ? ` (${m0.month}~${mEnd.month}월)` : ''),
+    shortLabel: `${String(m0.year).slice(2)}년 Q${quarterOf(startIdx)}` + (partial ? `(${m0.month}~${mEnd.month}월)` : ''),
+    key: `${String(m0.year).slice(2)}-Q${quarterOf(startIdx)}`,
+    year: m0.year,
+  };
+}
+function makeMonthPeriod(idx){
+  if (idx < 0) return null;
+  const m = DATA.months[idx];
+  return {
+    type:'month', idxs:[idx], startIdx: idx, endIdx: idx, partial:false,
+    label: monthLabelFull(idx), shortLabel: monthLabelFull(idx),
+    key: `${String(m.year).slice(2)}-${m.month}`,
+    year: m.year, month: m.month,
+  };
+}
+// {cur, prev, yoy} - prev는 직전 월/분기, yoy는 전년 동월/동분기 (없으면 null)
+function getPeriods(){
+  if (periodMode === 'quarter'){
+    const count = Math.min(3, ACTUAL_CUTOFF_IDX - refQStart + 1);
+    return {
+      cur: makeQuarterPeriod(refQStart, count),
+      prev: refQStart - 3 >= 0 ? makeQuarterPeriod(refQStart - 3, count) : null,
+      yoy: refQStart - 12 >= 0 ? makeQuarterPeriod(refQStart - 12, count) : null,
+    };
+  }
+  return {
+    cur: makeMonthPeriod(refIdx),
+    prev: refIdx - 1 >= 0 ? makeMonthPeriod(refIdx - 1) : null,
+    yoy: refIdx - 12 >= 0 ? makeMonthPeriod(refIdx - 12) : null,
+  };
+}
+const isQ = () => periodMode === 'quarter';
+const PREV_WORD = () => isQ() ? '전분기' : '전월';
+const CUR_WORD = () => isQ() ? '당분기' : '당월';
+const REF_WORD = () => isQ() ? '기준 분기' : '기준월';
+// 기간 합계 - 한 달이라도 값이 없으면(null) 불완전한 합계가 되므로 null을 돌려준다.
+function pSum(arr, p){
+  if (!p || !arr) return null;
+  let s = 0;
+  for (const i of p.idxs){
+    const v = arr[i];
+    if (v === null || v === undefined) return null;
+    s += v;
+  }
+  return s;
+}
+// 기간 매출액 대비 비중 = 기간 합계 / 기간 매출 합계 (월별 비중의 단순 평균이 아님)
+function pRatio(arr, p){
+  const v = pSum(arr, p);
+  const r = pSum(DATA.revenue, p);
+  return (v === null || !r) ? null : v / r;
+}
+// 차트에서 기준 기간 표시 - 월별은 점선 하나, 분기별은 해당 월 구간 음영
+function chartHighlight(){
+  const {cur} = getPeriods();
+  return isQ() ? {highlightRange:[cur.startIdx, cur.endIdx]} : {highlightIdx: refIdx};
+}
 
 // ratio-to-revenue for metrics that don't already have a precomputed ratio array
 // (노무비/경비 reuse DATA.laborRatio / DATA.midcatRatio['경비'])
@@ -521,7 +653,7 @@ function buildSubcatItems(midcatName){
 
 // ---------- expense (경비) subcategory prep for tab 3 ----------
 const EXP_PALETTE = ['var(--s1)','var(--s2)','var(--s3)','var(--s4)','var(--s5)','var(--s6)','var(--s7)','var(--s8)'];
-let EXP_ITEMS, selectedExpenseItems, LABOR_ITEMS, ANOMALY_ITEMS;
+let EXP_ITEMS, selectedExpenseItems, LABOR_ITEMS, SGA_ITEMS, ANOMALY_ITEMS;
 // Colors are assigned by position within the CURRENTLY SELECTED set (rank order), not by each
 // item's global rank - EXP_ITEMS has 16 entries but only 8 palette slots, so a fixed per-entity
 // color would collide for entities 8 apart in rank (e.g. rank-7 복리후생비 and rank-15 통신비,
@@ -543,6 +675,7 @@ function computeDerived(){
     return last;
   })();
   refIdx = ACTUAL_CUTOFF_IDX;
+  refQStart = quarterStartOf(ACTUAL_CUTOFF_IDX);
   NET_INCOME_RATIO = DATA.netIncome.map((v,i) => (v==null || !DATA.revenue[i]) ? null : v/DATA.revenue[i]);
   GROSS_PROFIT_RATIO = DATA.grossProfit.map((v,i) => (v==null || !DATA.revenue[i]) ? null : v/DATA.revenue[i]);
   OPINCOME_NEW_RATIO = DATA.opIncomeNew.map((v,i) => (v==null || !DATA.revenue[i]) ? null : v/DATA.revenue[i]);
@@ -551,7 +684,8 @@ function computeDerived(){
     ['복리후생비','통신비','수도광열비'].filter(n => EXP_ITEMS.some(it => it.name === n))
   );
   LABOR_ITEMS = buildSubcatItems('노무비');
-  ANOMALY_ITEMS = [...LABOR_ITEMS, ...EXP_ITEMS];
+  SGA_ITEMS = buildSubcatItems('판관비');
+  ANOMALY_ITEMS = [...LABOR_ITEMS, ...EXP_ITEMS, ...SGA_ITEMS];
 }
 
 function escapeHtml(s){
@@ -635,22 +769,102 @@ function setupRichEditor(editorEl, boldBtnEl, sizeSelEl){
   });
 }
 
-// ---------- reference month selector ----------
+// ---------- 기간별 메모 (standing_notes 테이블을 key만 달리해서 재사용) ----------
+// key 예: "rev_note::26-8"(월), "cost_note::26-Q3"(분기) - 월별/분기별 메모가 서로 섞이지 않는다.
+function renderPeriodNote(containerId, keyPrefix, title, placeholder){
+  const {cur} = getPeriods();
+  const key = `${keyPrefix}::${cur.key}`;
+  const existing = STANDING_NOTES[key];
+  const box = document.getElementById(containerId);
+  const idp = containerId;
+  box.innerHTML = `
+    <h3 style="font-size:13px;margin:0 0 8px;">${cur.label} ${title}</h3>
+    <div class="note-box">
+      ${richToolbarHtml(idp + 'Bold', idp + 'Size')}
+      <div id="${idp}Input" class="rich-editor" contenteditable="true" style="min-height:140px;" data-placeholder="${escapeHtml(placeholder)}">${plainOrRichToHtml(existing && existing.content)}</div>
+      <div class="note-actions">
+        <button class="note-btn" id="${idp}Save">저장</button>
+        <span class="note-status" id="${idp}Status">${existing && existing.content ? '마지막 저장: ' + new Date(existing.updated_at).toLocaleString('ko-KR') : ''}</span>
+      </div>
+    </div>`;
+  const input = document.getElementById(idp + 'Input');
+  setupRichEditor(input, document.getElementById(idp + 'Bold'), document.getElementById(idp + 'Size'));
+  document.getElementById(idp + 'Save').addEventListener('click', async () => {
+    const btn = document.getElementById(idp + 'Save');
+    const status = document.getElementById(idp + 'Status');
+    const content = sanitizeRichText(input.innerHTML);
+    btn.disabled = true;
+    status.textContent = '저장 중…';
+    try {
+      await apiCall('save-standing-note', {token: getToken(), key, content});
+      const now = new Date().toISOString();
+      STANDING_NOTES[key] = {key, content, updated_at: now};
+      status.textContent = '마지막 저장: ' + new Date(now).toLocaleString('ko-KR');
+    } catch(e){
+      status.textContent = '저장 실패: ' + e.message;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+}
+
+// ---------- reference period selector (기준월 / 기준 분기) ----------
+// 선택지는 실적 마감월에 따라 달라지므로 업로드 후에도 매번 다시 채운다.
 function populateRefSelect(){
   const sel = document.getElementById('refMonthSel');
   sel.innerHTML = DATA.months.slice(0, ACTUAL_CUTOFF_IDX+1).map((m,i) =>
     `<option value="${i}">${m.year}년 ${m.month}월</option>`).join('');
   sel.value = refIdx;
+
+  const qSel = document.getElementById('refQuarterSel');
+  const qOpts = [];
+  for (let s = 0; s <= ACTUAL_CUTOFF_IDX; s += 3){
+    const count = Math.min(3, ACTUAL_CUTOFF_IDX - s + 1);
+    const p = makeQuarterPeriod(s, count);
+    qOpts.push(`<option value="${s}">${p.label}</option>`);
+  }
+  qSel.innerHTML = qOpts.join('');
+  qSel.value = refQStart;
+}
+// 이벤트 리스너는 한 번만 등록
+function bindRefControls(){
+  const sel = document.getElementById('refMonthSel');
   sel.addEventListener('change', () => {
     refIdx = parseInt(sel.value, 10);
     try { localStorage.setItem('steri_ref_idx', String(refIdx)); } catch(e){}
     renderAll();
   });
+  const qSel = document.getElementById('refQuarterSel');
+  qSel.addEventListener('change', () => {
+    refQStart = parseInt(qSel.value, 10);
+    try { localStorage.setItem('steri_ref_qstart', String(refQStart)); } catch(e){}
+    renderAll();
+  });
+
+  document.querySelectorAll('#periodToggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.mode === periodMode) return;
+      periodMode = btn.dataset.mode;
+      try { localStorage.setItem('steri_period_mode', periodMode); } catch(e){}
+      renderAll();
+    });
+  });
 }
-function renderRefPill(){
+function renderRefBar(){
+  document.querySelectorAll('#periodToggle button').forEach(b => b.classList.toggle('active', b.dataset.mode === periodMode));
+  document.getElementById('refMonthSel').hidden = isQ();
+  document.getElementById('refQuarterSel').hidden = !isQ();
+  document.getElementById('refLabel').textContent = REF_WORD();
+  const {cur} = getPeriods();
   const pill = document.getElementById('refPill');
-  const latestTag = refIdx === ACTUAL_CUTOFF_IDX ? `<span class="tag">최신 실적월</span>` : `<span class="tag">과거 시점 보기</span>`;
-  pill.innerHTML = `📅 ${monthLabelFull(refIdx)} 기준 ${latestTag}`;
+  const isLatest = cur.endIdx === ACTUAL_CUTOFF_IDX;
+  const tags = (isLatest ? `<span class="tag">최신 실적${isQ() ? ' 분기' : '월'}</span>` : `<span class="tag">과거 시점 보기</span>`) +
+    (cur.partial ? `<span class="tag">${cur.idxs.length}개월 누적</span>` : '');
+  pill.innerHTML = `📅 ${cur.label} 기준 ${tags}`;
+  document.getElementById('refNote').textContent = isQ()
+    ? '※ 분기별 보기: 스냅샷·표·상세 내역은 분기 합계 기준, 차트는 월별 추이 위에 해당 분기를 음영으로 표시합니다. 진행 중인 분기는 직전 분기·전년 동기도 같은 개월 수만 비교합니다.'
+    : '※ 기준월을 바꾸면 아래 스냅샷 비교·누적/연간 예상·차트 강조선·하단 상세 내역이 모두 이 달 기준으로 함께 바뀝니다.';
+  document.querySelectorAll('.period-note-title').forEach(h => { h.textContent = `${CUR_WORD()} 특이사항`; });
 }
 
 // ---------- tabs ----------
@@ -667,22 +881,25 @@ function switchTab(tab){
 }
 function renderTabContent(tab){
   if (tab === 'sec1'){
-    renderKPI();
-    renderQuarterlyTable();
     renderSec1Charts();
-  } else if (tab === 'sec2'){
+  } else if (tab === 'sec6'){
+    renderCostKPI();
+    renderCostQuarterlyTable();
+    renderCostChart();
+  } else if (tab === 'sec7'){
+    renderPeriodNote('costNote', 'cost_note', '비용 특이사항', '이 기간 비용 측면의 특이사항을 남겨주세요.');
+    renderAnomalyTop3();
+    renderCauseAnalysis();
     renderRatioChart();
     renderKeyMetricsTable();
     renderMidcatChart();
     renderDrill();
-  } else if (tab === 'sec3'){
     renderExpenseTrendChart();
     renderExpenseShareTable();
   } else if (tab === 'sec4'){
     renderMonthlyComment();
-    renderAnomalyTop3();
-    renderCauseAnalysis();
   } else if (tab === 'sec5'){
+    renderPeriodNote('revenueNote', 'rev_note', '매출 특이사항', '이 기간 매출 측면의 특이사항을 남겨주세요.');
     renderLaundrySnapshot();
     renderLaundryChart();
     renderLaundryQuarterlyTable();
@@ -690,6 +907,144 @@ function renderTabContent(tab){
     renderGownChart();
     renderGownQuarterlyTable();
   }
+}
+// 창 크기 변경 시에는 차트(SVG)만 다시 그린다 - 탭 전체를 다시 그리면 작성 중인 메모
+// 초안(매출 세부·비용 세부·종합의견 칸)이 날아가기 때문.
+function redrawCharts(tab){
+  if (tab === 'sec1') renderSec1Charts();
+  else if (tab === 'sec6') renderCostChart();
+  else if (tab === 'sec7'){ renderRatioChart(); renderMidcatChart(); renderExpenseTrendChart(); }
+  else if (tab === 'sec5'){ renderLaundryChart(); renderGownChart(); }
+}
+
+// ================= 비용추이 탭 (매출추이 탭과 같은 구성: 누적/연말 예상 · 분기표 · 월별 차트) =================
+// 총비용 = 노무비 + 경비 + 판관비 (영업 관련 비용만, 이자 등 영업외비용 제외)
+function totalCostArr(){
+  return DATA.revenue.map((_, i) =>
+    (DATA.midcatTotals['노무비'][i] || 0) + (DATA.midcatTotals['경비'][i] || 0) + (DATA.midcatTotals['판관비'][i] || 0));
+}
+// 비용은 늘어나면 나쁜 방향이라, 증감 배지 색을 매출과 반대로(증가=빨강) 쓴다.
+function costDeltaBadge(v, prefix){
+  if (v === null || v === undefined || !isFinite(v)) return `<span class="delta-badge flat"><span class="k">${prefix}</span>-</span>`;
+  const cls = v > 0 ? 'neg' : 'pos';
+  return `<span class="delta-badge ${cls}"><span class="k">${prefix}</span>${v>=0?'▲':'▼'}${fmtPct(Math.abs(v))}</span>`;
+}
+function costDeltaBadgePP(v, prefix){
+  if (v === null || v === undefined || !isFinite(v)) return `<span class="delta-badge flat"><span class="k">${prefix}</span>-</span>`;
+  const cls = v > 0 ? 'neg' : 'pos';
+  return `<span class="delta-badge ${cls}"><span class="k">${prefix}</span>${v>=0?'▲':'▼'}${Math.abs(v).toFixed(1)}%p</span>`;
+}
+// 누적 실적 / 연말 예상 - 매출추이 탭 renderKPI와 같은 방식(현재 분기 월평균 × 잔여 개월)
+function renderCostKPI(){
+  const {cur} = getPeriods();
+  const endIdx = cur.endIdx;
+  const refYear = DATA.months[endIdx].year;
+  const refMonth = DATA.months[endIdx].month;
+  const ys = yearStartIdx(refYear);
+  const cost = totalCostArr();
+  const sum = (arr, a, b) => { let s = 0; for (let i = a; i <= b; i++) s += (arr[i] || 0); return s; };
+  const ytdCost = sum(cost, ys, endIdx);
+  const ytdRev = sum(DATA.revenue, ys, endIdx);
+  const qStart = quarterStartOf(endIdx);
+  const qCount = endIdx - qStart + 1;
+  const qAvgCost = sum(cost, qStart, endIdx) / qCount;
+  const qAvgRev = sum(DATA.revenue, qStart, endIdx) / qCount;
+  const qName = `${quarterOf(endIdx)}분기`;
+  const qMonthsTxt = qCount > 1 ? `${DATA.months[qStart].month}~${refMonth}월` : `${refMonth}월`;
+  const remaining = 12 - refMonth;
+  const projCost = ytdCost + remaining * qAvgCost;
+  const projRev = ytdRev + remaining * qAvgRev;
+  const ytdRatio = ytdRev ? ytdCost / ytdRev : null;
+  const projRatio = projRev ? projCost / projRev : null;
+
+  const kpiHtml = items => items.map(it => `
+      <div class="kpi">
+        <div class="label">${it.label}</div>
+        <div class="value">${it.value}</div>
+        ${it.sub ? `<div class="sub">${it.sub}</div>` : ''}
+      </div>`).join('');
+  document.getElementById('costKpiRow').innerHTML = `
+    <div class="kpi-group g-actual">
+      <div class="kpi-group-label"><span class="dot" style="background:var(--s1)"></span>누적 실적 (${refYear}년 1~${refMonth}월)</div>
+      <div class="kpi-row">${kpiHtml([
+        {label:'누적 총비용', value: fmtWon(ytdCost)},
+        {label:'누적 비용률 (매출액 대비)', value: fmtPct(ytdRatio)},
+      ])}</div>
+    </div>
+    <div class="kpi-group g-proj">
+      <div class="kpi-group-label"><span class="dot" style="background:var(--s2)"></span>${remaining>0 ? `${refYear}년 말 예상 (${qName}(${qMonthsTxt}) 추세 지속 가정)` : `${refYear}년 실적 (연간 마감)`}</div>
+      <div class="kpi-row">${kpiHtml([
+        {label: remaining>0 ? '예상 총비용' : '연간 총비용 합계', value: fmtWon(projCost),
+          sub: remaining>0 ? `${qName} 월평균 ${fmtWon(qAvgCost)} × 잔여 ${remaining}개월` : ''},
+        {label: remaining>0 ? '예상 비용률' : '연간 비용률', value: fmtPct(projRatio),
+          sub: remaining>0 ? `예상 총비용 ÷ 예상 매출(${fmtWon(projRev)})` : ''},
+      ])}</div>
+    </div>`;
+}
+// 분기별 총비용 & 비용률 (25년 대비) - renderQuarterlyTable과 같은 규칙(진행 중 분기는 같은 개월 수 비교)
+function renderCostQuarterlyTable(){
+  const cost = totalCostArr();
+  const sumRange = (arr, start, count) => { let s = 0; for (let i = 0; i < count; i++) s += (arr[start+i] || 0); return s; };
+  const ratio = (c, r) => r ? c / r : null;
+  const pp = (a, b) => (a === null || b === null) ? null : (a - b) * 100;
+  const currentQ = currentQuarterNum();
+  const trs = [0,1,2,3].map(q => {
+    const start25 = q*3, start26 = 12+q*3;
+    const k = Math.max(0, Math.min(3, ACTUAL_CUTOFF_IDX - start26 + 1));
+    const c25 = sumRange(cost, start25, 3), r25 = sumRange(DATA.revenue, start25, 3);
+    const c26 = k > 0 ? sumRange(cost, start26, k) : null;
+    const r26 = k > 0 ? sumRange(DATA.revenue, start26, k) : null;
+    const cYoyBase = k > 0 ? sumRange(cost, start25, k) : null;
+    const rYoyBase = k > 0 ? sumRange(DATA.revenue, start25, k) : null;
+    const cQoqBase = k > 0 ? sumRange(cost, start26 - 3, k) : null;
+    const rQoqBase = k > 0 ? sumRange(DATA.revenue, start26 - 3, k) : null;
+    const ratio25 = ratio(c25, r25);
+    const ratio26 = k > 0 ? ratio(c26, r26) : null;
+    const isCurrent = q+1 === currentQ;
+    const qLabel = `Q${q+1}` +
+      (isCurrent ? ` <span class="current-q-badge">현재 분기</span>` : '') +
+      (k > 0 && k < 3 ? ` <span class="anomaly-group" style="margin-left:4px;">${k}개월 누적</span>` : '');
+    return `<tr${isCurrent ? ' class="current-quarter"' : ''}>
+      <td>${qLabel}</td>
+      <td>${fmtWon(c25)}</td>
+      <td class="qt-rev-val">${fmtWon(c26)}</td>
+      <td>${costDeltaBadge(pctChange(c26, cQoqBase),'')}</td>
+      <td>${costDeltaBadge(pctChange(c26, cYoyBase),'')}</td>
+      <td>${fmtPct(ratio25)}</td>
+      <td class="qt-gp-val">${fmtPct(ratio26)}</td>
+      <td>${costDeltaBadgePP(k > 0 ? pp(ratio26, ratio(cQoqBase, rQoqBase)) : null,'')}</td>
+      <td>${costDeltaBadgePP(k > 0 ? pp(ratio26, ratio(cYoyBase, rYoyBase)) : null,'')}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('costQuarterlyTable').innerHTML = `
+    <h3 style="font-size:13px;margin:0 0 10px;">분기별 총비용 &amp; 비용률 (25년 대비)</h3>
+    <div class="chart-scroll"><table class="compare-table">
+      <thead>
+        <tr>
+          <th rowspan="2">분기</th>
+          <th colspan="4" class="qt-group qt-rev">총비용</th>
+          <th colspan="4" class="qt-group qt-gp">비용률 (매출액 대비)</th>
+        </tr>
+        <tr>
+          <th>25년</th><th class="qt-year-current">26년</th><th>QoQ</th><th>YoY</th>
+          <th>25년</th><th class="qt-year-current">26년</th><th>QoQ</th><th>YoY</th>
+        </tr>
+      </thead>
+      <tbody>${trs}</tbody>
+    </table></div>
+    <p class="note" style="margin-top:8px;">※ 비용은 늘면 부담이 커지는 방향이라 증가를 빨간색, 감소를 초록색으로 표시합니다. 비용률 QoQ·YoY는 %p 변화입니다. 진행 중인 분기는 비교 대상도 같은 개월 수만 합산합니다.</p>`;
+}
+function renderCostChart(){
+  const n = ACTUAL_CUTOFF_IDX + 1;
+  const labels = buildMonthLabels(n);
+  const series = [
+    {name:'총비용', color:'var(--s2)', data: totalCostArr().slice(0,n)},
+    {name:'노무비', color:'var(--s1)', data: DATA.midcatTotals['노무비'].slice(0,n)},
+    {name:'경비', color:'var(--s4)', data: DATA.midcatTotals['경비'].slice(0,n)},
+    {name:'판관비', color:'var(--s3)', data: DATA.midcatTotals['판관비'].slice(0,n)},
+  ];
+  drawLineChart('chartCost', series, labels, {moneyAxis:true, ...chartHighlight()});
+  renderLegend('legCost', series.map(({name,color}) => ({name,color})));
 }
 
 // ---------- % change (direction-correct even when the base value is negative, e.g. a loss) ----------
@@ -738,51 +1093,66 @@ function deltaBadgeAmount(cur, prev){
 // 매출액 자체는 금액 증감률(전월/전년)로 두고, 나머지 4개(비용/이익 항목)는 "매출액 대비 비중"이
 // 전월/전년 대비 몇 %p 움직였는지로 보여준다 - 항목 자체의 raw growth%는 기저 금액이 작을 때
 // 변동성이 커서 오해를 주기 쉽고, 경영 관점에서는 매출 대비 비중 변화가 더 의미있는 지표라서.
+function bizDaysOfPeriod(p){
+  if (!p) return null;
+  return p.idxs.reduce((a,i) => a + businessDaysInMonth(DATA.months[i].year, DATA.months[i].month), 0);
+}
+function holidaysOfPeriod(p){
+  return p.idxs.flatMap(i => holidaysInMonth(DATA.months[i].year, DATA.months[i].month));
+}
+// 영업이익(판관비 차감 후) 값이 없는 실적월이 남아 있을 때만 안내한다 - 새 서식(매출총이익·
+// 영업이익 행 포함) 엑셀이 업로드된 연도는 자동으로 값이 채워지므로 문구도 사라진다.
+function missingOpIncomeNote(){
+  const years = [...new Set(DATA.months.slice(0, ACTUAL_CUTOFF_IDX+1)
+    .filter((m,i) => DATA.opIncomeNew[i] == null).map(m => String(m.year).slice(2)))];
+  if (!years.length) return '';
+  return ` ${years.join('·')}년은 현재 업로드된 엑셀에 영업이익(판관비 차감 후) 행이 없어 '-'로 표시됩니다. 매출총이익·영업이익 행이 있는 최신 서식 엑셀을 업로드하면 자동으로 채워집니다.`;
+}
 function renderSnapshot(){
-  const revV = DATA.revenue[refIdx];
-  const revPrev = refIdx > 0 ? DATA.revenue[refIdx-1] : null;
+  const {cur, prev, yoy} = getPeriods();
+  const PW = PREV_WORD();
+  const revV = pSum(DATA.revenue, cur);
+  const revPrev = pSum(DATA.revenue, prev);
   const revMom = pctChange(revV, revPrev);
-  const revYprev = refIdx >= 12 ? DATA.revenue[refIdx-12] : null;
+  const revYprev = pSum(DATA.revenue, yoy);
   const revYoy = pctChange(revV, revYprev);
-  const refMonth = DATA.months[refIdx];
-  const bizDays = businessDaysInMonth(refMonth.year, refMonth.month);
-  const prevMonthObj = refIdx > 0 ? DATA.months[refIdx-1] : null;
-  const bizDaysPrev = prevMonthObj ? businessDaysInMonth(prevMonthObj.year, prevMonthObj.month) : null;
+  const bizDays = bizDaysOfPeriod(cur);
+  const bizDaysPrev = bizDaysOfPeriod(prev);
   const bizDaysDiff = bizDaysPrev !== null ? bizDays - bizDaysPrev : null;
-  const monthHolidays = holidaysInMonth(refMonth.year, refMonth.month);
-  const holidayNote = monthHolidays.length
-    ? `<div class="bizdays-holidays">주말 포함, 국공휴일만 제외 · ${monthHolidays.join(', ')} 제외</div>`
-    : `<div class="bizdays-holidays">주말 포함, 국공휴일만 제외 · 해당 월 공휴일 없음</div>`;
+  const periodHolidays = holidaysOfPeriod(cur);
+  const holidayNote = periodHolidays.length
+    ? `<div class="bizdays-holidays">주말 포함, 국공휴일만 제외 · ${periodHolidays.join(', ')} 제외</div>`
+    : `<div class="bizdays-holidays">주말 포함, 국공휴일만 제외 · 해당 ${isQ() ? '분기' : '월'} 공휴일 없음</div>`;
   const topHtml = `<div class="snap-metric">
-      <div class="label">매출액</div>
+      <div class="label">매출액${isQ() ? ` (${cur.shortLabel} 합계)` : ''}</div>
       <div class="value">${fmtWon(revV)}</div>
-      <div class="deltas">${deltaBadge(revMom,'전월 ')}${deltaBadgeAmount(revV,revPrev)}${deltaBadge(revYoy,'전년 ')}</div>
+      <div class="deltas">${deltaBadge(revMom,PW+' ')}${deltaBadgeAmount(revV,revPrev)}${deltaBadge(revYoy,'전년 ')}</div>
     </div>
     <div class="snap-metric bizdays">
-      <div class="label">당월 영업일수</div>
+      <div class="label">${CUR_WORD()} 영업일수${cur.partial ? ` (${cur.idxs.length}개월)` : ''}</div>
       <div class="value">${bizDays}일</div>
-      <div class="deltas">${deltaBadgeCount(bizDaysDiff,'일','전월대비 ')}</div>
+      <div class="deltas">${deltaBadgeCount(bizDaysDiff,'일',PW+'대비 ')}</div>
       ${holidayNote}
     </div>`;
 
   const metrics = [
-    {label:'매출총이익', arr: DATA.grossProfit, ratio: GROSS_PROFIT_RATIO},
-    {label:'노무비', arr: DATA.laborCost, ratio: DATA.laborRatio},
-    {label:'경비', arr: DATA.midcatTotals['경비'], ratio: DATA.midcatRatio['경비']},
-    {label:'영업이익', arr: DATA.opIncomeNew, ratio: OPINCOME_NEW_RATIO},
+    {label:'매출총이익', arr: DATA.grossProfit},
+    {label:'노무비', arr: DATA.laborCost},
+    {label:'경비', arr: DATA.midcatTotals['경비']},
+    {label:'영업이익', arr: DATA.opIncomeNew},
   ];
   const restHtml = metrics.map(m => {
-    const v = m.arr[refIdx];
-    const vPrev = refIdx > 0 ? m.arr[refIdx-1] : null;
-    const ratioNow = m.ratio[refIdx];
-    const ratioPrev = refIdx > 0 ? m.ratio[refIdx-1] : null;
-    const ratioYprev = refIdx >= 12 ? m.ratio[refIdx-12] : null;
+    const v = pSum(m.arr, cur);
+    const vPrev = pSum(m.arr, prev);
+    const ratioNow = pRatio(m.arr, cur);
+    const ratioPrev = pRatio(m.arr, prev);
+    const ratioYprev = pRatio(m.arr, yoy);
     const ppMom = (ratioNow!=null && ratioPrev!=null) ? (ratioNow-ratioPrev)*100 : null;
     const ppYoy = (ratioNow!=null && ratioYprev!=null) ? (ratioNow-ratioYprev)*100 : null;
     return `<div class="snap-metric">
       <div class="label">${m.label}</div>
       <div class="value">${fmtWon(v)}</div>
-      <div class="deltas">${deltaBadgePP(ppMom,'전월 ')}${deltaBadgeAmount(v,vPrev)}${deltaBadgePP(ppYoy,'전년 ')}</div>
+      <div class="deltas">${deltaBadgePP(ppMom,PW+' ')}${deltaBadgeAmount(v,vPrev)}${deltaBadgePP(ppYoy,'전년 ')}</div>
     </div>`;
   }).join('');
 
@@ -795,7 +1165,7 @@ function renderSnapshot(){
       당기순이익 (대시보드 노출 X) = 영업이익 - 영업외비용 (이자)<br>
       감가상각 = 월 1,500만원
     </p>` +
-    `<p class="snapshot-note">※ 매출액은 금액 증감률, 나머지 4개 항목(매출총이익·노무비·경비·영업이익)은 매출액 대비 비중의 전월/전년 대비 변화(%p) 기준입니다. 매출총이익·영업이익은 2026년 8월 결산부터 새로 도입된 항목으로, 25년 데이터는 매출총이익 자리에 기존 방식(매출원가 차감 후) 수치가 표시되고 영업이익은 아직 집계되지 않습니다(-).</p>`;
+    `<p class="snapshot-note">※ 매출액은 금액 증감률, 나머지 4개 항목(매출총이익·노무비·경비·영업이익)은 매출액 대비 비중의 ${PW}/전년 대비 변화(%p) 기준입니다.${cur.partial ? ` 진행 중인 분기(${cur.idxs.length}개월 누적)는 직전 분기·전년 동기도 같은 개월 수만 합산해 비교합니다.` : ''} ${missingOpIncomeNote()}</p>`;
 }
 
 // ---------- generic line chart ----------
@@ -862,6 +1232,16 @@ function drawLineChart(svgId, series, labels, opts){
     svg.appendChild(t);
   }
 
+  // reference quarter band (분기별 보기) - 해당 분기 월 구간을 음영 처리
+  if (opts.highlightRange){
+    const [a, b] = opts.highlightRange;
+    if (a < n){
+      const half = n > 1 ? plotW / (n-1) / 2 : 0;
+      const x1 = Math.max(padL, xAt(a) - half), x2 = Math.min(W-padR, xAt(Math.min(b, n-1)) + half);
+      svg.appendChild(el('rect', {x:x1, y:padT, width:Math.max(2, x2-x1), height:plotH, fill:'var(--refmark)', opacity:0.10}));
+      svg.appendChild(el('line', {x1:x1, x2:x2, y1:padT, y2:padT, stroke:'var(--refmark)', 'stroke-width':2.5}));
+    }
+  }
   // reference month marker (drawn under the lines' hover layer, over gridlines)
   if (opts.highlightIdx !== undefined && opts.highlightIdx !== null && opts.highlightIdx >= 0 && opts.highlightIdx < n){
     const hx = xAt(opts.highlightIdx);
@@ -908,7 +1288,8 @@ function drawLineChart(svgId, series, labels, opts){
       const fv = opts.fmt ? opts.fmt(v) : (opts.isPercent ? fmtPct(v) : fmtWon(v));
       rows += `<div class="row"><span>${s.name}</span><span style="margin-left:14px;font-weight:600;">${fv}</span></div>`;
     });
-    const refTag = (opts.highlightIdx === idx) ? ' (기준월)' : '';
+    const inRange = opts.highlightRange && idx >= opts.highlightRange[0] && idx <= opts.highlightRange[1];
+    const refTag = (opts.highlightIdx === idx) ? ' (기준월)' : (inRange ? ' (기준 분기)' : '');
     showTooltip(e.clientX, e.clientY, `<div class="t">${labels[idx]}${refTag}</div>${rows}`);
   });
   hitRect.addEventListener('mouseleave', () => {
@@ -921,7 +1302,7 @@ function drawLineChart(svgId, series, labels, opts){
 function renderLegend(elId, items){
   document.getElementById(elId).innerHTML = items.map(it =>
     `<span><span class="dot" style="background:${it.color}"></span>${it.name}</span>`).join('') +
-    `<span><span class="dot mark"></span>기준월</span>`;
+    `<span><span class="dot mark"></span>${REF_WORD()}</span>`;
 }
 
 // ---------- section 1: 분기별 매출액 & 매출총이익 (25년 대비) ----------
@@ -949,20 +1330,17 @@ function renderQuarterlyTable(){
     const gp26 = actualMonths26 > 0 ? sumRange(DATA.grossProfit, start26, actualMonths26) : null;
     const rev25Comp = actualMonths26 > 0 ? sumRange(DATA.revenue, start25, actualMonths26) : null;
     const gp25Comp = actualMonths26 > 0 ? sumRange(DATA.grossProfit, start25, actualMonths26) : null;
+    // QoQ(직전 분기 대비) - 시간순 바로 앞 분기(Q1이면 25년 4분기)와 비교하되, YoY와
+    // 마찬가지로 진행 중인 분기는 앞 분기도 같은 개월 수만 합산한다 (상단 분기별 스냅샷과 동일 기준).
+    const prevStart = start26 - 3;
+    const revPrevComp = actualMonths26 > 0 ? sumRange(DATA.revenue, prevStart, actualMonths26) : null;
+    const gpPrevComp = actualMonths26 > 0 ? sumRange(DATA.grossProfit, prevStart, actualMonths26) : null;
     return {
       q: q+1, partial: actualMonths26 > 0 && actualMonths26 < 3, actualMonths26,
       rev25, gp25, rev26, gp26,
       revYoy: pctChange(rev26, rev25Comp), gpYoy: pctChange(gp26, gp25Comp),
+      revQoq: pctChange(rev26, revPrevComp), gpQoq: pctChange(gp26, gpPrevComp),
     };
-  });
-
-  // QoQ(직전 분기 대비) - 시간순으로 바로 앞 분기와 비교한다. Q1은 25년 4분기(항상 마감된
-  // 값)와, 나머지는 같은 해 바로 앞 분기(rows[i-1])와 비교한다.
-  rows.forEach((r, i) => {
-    const prevRev = i === 0 ? rows[3].rev25 : rows[i-1].rev26;
-    const prevGp = i === 0 ? rows[3].gp25 : rows[i-1].gp26;
-    r.revQoq = pctChange(r.rev26, prevRev);
-    r.gpQoq = pctChange(r.gp26, prevGp);
   });
 
   const currentQ = currentQuarterNum();
@@ -1001,7 +1379,7 @@ function renderQuarterlyTable(){
       </thead>
       <tbody>${trs}</tbody>
     </table></div>
-    <p class="note" style="margin-top:8px;">※ 26년 진행 중인 분기는 실적이 입력된 달까지만 합산합니다. QoQ는 바로 앞 분기 대비, YoY는 25년의 같은 개월 수 대비입니다.</p>`;
+    <p class="note" style="margin-top:8px;">※ 26년 진행 중인 분기는 실적이 입력된 달까지만 합산합니다. QoQ는 바로 앞 분기, YoY는 25년 같은 분기 대비이며, 진행 중인 분기는 비교 대상도 같은 개월 수만 합산합니다.</p>`;
 }
 
 // ---------- section 1 charts ----------
@@ -1014,7 +1392,7 @@ function renderSec1Charts(){
     {name:'영업이익', color:'var(--s2)', data: DATA.opIncomeNew.slice(0,n)},
     {name:'당기순이익', color:'var(--s5)', data: DATA.netIncome.slice(0,n)},
   ];
-  drawLineChart('chartRevNI', series, labels, {moneyAxis:true, highlightIdx: refIdx});
+  drawLineChart('chartRevNI', series, labels, {moneyAxis:true, ...chartHighlight()});
   renderLegend('legRevNI', series.map(({name,color}) => ({name,color})));
 }
 
@@ -1025,7 +1403,7 @@ function renderRatioChart(){
   drawLineChart('chartRatio', [
     {name:'매출액 대비 노무비 비율', color:'var(--s1)', data: DATA.laborRatio.slice(0,n)},
     {name:'매출액 대비 수도광열비 비율', color:'var(--s3)', data: DATA.utilitiesRatio.slice(0,n)},
-  ], labels, {isPercent:true, padL:44, highlightIdx: refIdx});
+  ], labels, {isPercent:true, padL:44, ...chartHighlight()});
   renderLegend('legRatio', [
     {name:'노무비/매출액', color:'var(--s1)'},
     {name:'수도광열비/매출액', color:'var(--s3)'},
@@ -1146,35 +1524,49 @@ function renderMidcatChart(){
   const series = MC_NAMES.map(name => ({
     name, color: MC_COLORS[name], data: DATA.midcatRatio[name].slice(0,n)
   }));
-  drawLineChart('chartMidcat', series, labels, {isPercent:true, padL:44, highlightIdx: refIdx});
+  drawLineChart('chartMidcat', series, labels, {isPercent:true, padL:44, ...chartHighlight()});
   renderLegend('legMidcat', MC_NAMES.map(name => ({name, color: MC_COLORS[name]})));
 }
 
 // ---------- KPI (누적 실적 / 연말 예상, 기준월 기준으로 계산) ----------
+// 연말 예상 = 누적 실적 + 남은 개월 수 × "현재 분기 월평균". 한 달치(기준월)만 보고
+// 연장하면 명절·일회성 비용 같은 월별 출렁임이 연간 예상에 그대로 증폭되므로, 기준 시점이
+// 속한 분기의 실적월 평균을 추세로 쓴다 (예: 8월 기준이면 3분기 7~8월 평균).
 function renderKPI(){
-  const refYear = DATA.months[refIdx].year;
-  const refMonth = DATA.months[refIdx].month;
+  const {cur} = getPeriods();
+  const endIdx = cur.endIdx;
+  const refYear = DATA.months[endIdx].year;
+  const refMonth = DATA.months[endIdx].month;
   const ys = yearStartIdx(refYear);
-  const ytdRev = DATA.revenue.slice(ys, refIdx+1).reduce((a,b)=>a+b,0);
-  const ytdGP = DATA.grossProfit.slice(ys, refIdx+1).reduce((a,b)=>a+(b||0),0);
-  const lastRev = DATA.revenue[refIdx] || 0;
-  const lastGP = DATA.grossProfit[refIdx] || 0;
+  const ytdRev = DATA.revenue.slice(ys, endIdx+1).reduce((a,b)=>a+b,0);
+  const ytdGP = DATA.grossProfit.slice(ys, endIdx+1).reduce((a,b)=>a+(b||0),0);
+  const qStart = quarterStartOf(endIdx);
+  const qCount = endIdx - qStart + 1;
+  const qIdxs = [];
+  for (let i = qStart; i <= endIdx; i++) qIdxs.push(i);
+  const qAvgRev = qIdxs.reduce((a,i) => a + (DATA.revenue[i] || 0), 0) / qCount;
+  const qAvgGP = qIdxs.reduce((a,i) => a + (DATA.grossProfit[i] || 0), 0) / qCount;
+  const qName = `${quarterOf(endIdx)}분기`;
+  const qMonthsTxt = qCount > 1 ? `${DATA.months[qStart].month}~${refMonth}월` : `${refMonth}월`;
   const remaining = 12 - refMonth;
-  const projRev = ytdRev + remaining * lastRev;
-  const projGP = ytdGP + remaining * lastGP;
+  const projRev = ytdRev + remaining * qAvgRev;
+  const projGP = ytdGP + remaining * qAvgGP;
 
   const actualItems = [
     {label: '누적 매출', value: fmtWon(ytdRev), cls:""},
     {label: '누적 매출총이익', value: fmtWon(ytdGP), cls: ytdGP>=0?"pos":"neg"},
   ];
   const projItems = [
-    {label: remaining>0 ? '예상 매출' : '연간 매출 합계', value: fmtWon(projRev), cls:""},
-    {label: remaining>0 ? '예상 매출총이익' : '연간 매출총이익 합계', value: fmtWon(projGP), cls: projGP>=0?"pos":"neg"},
+    {label: remaining>0 ? '예상 매출' : '연간 매출 합계', value: fmtWon(projRev), cls:"",
+      sub: remaining>0 ? `${qName} 월평균 ${fmtWon(qAvgRev)} × 잔여 ${remaining}개월` : ''},
+    {label: remaining>0 ? '예상 매출총이익' : '연간 매출총이익 합계', value: fmtWon(projGP), cls: projGP>=0?"pos":"neg",
+      sub: remaining>0 ? `${qName} 월평균 ${fmtWon(qAvgGP)} × 잔여 ${remaining}개월` : ''},
   ];
   const kpiHtml = items => items.map(it => `
       <div class="kpi">
         <div class="label">${it.label}</div>
         <div class="value ${it.cls}">${it.value}</div>
+        ${it.sub ? `<div class="sub">${it.sub}</div>` : ''}
       </div>`).join('');
 
   const row = document.getElementById('kpiRow');
@@ -1184,20 +1576,20 @@ function renderKPI(){
       <div class="kpi-row">${kpiHtml(actualItems)}</div>
     </div>
     <div class="kpi-group g-proj">
-      <div class="kpi-group-label"><span class="dot" style="background:var(--s2)"></span>${remaining>0 ? `${refYear}년 말 예상 (${refMonth}월 추세 지속 가정)` : `${refYear}년 실적 (연간 마감)`}</div>
+      <div class="kpi-group-label"><span class="dot" style="background:var(--s2)"></span>${remaining>0 ? `${refYear}년 말 예상 (${qName}(${qMonthsTxt}) 추세 지속 가정)` : `${refYear}년 실적 (연간 마감)`}</div>
       <div class="kpi-row">${kpiHtml(projItems)}</div>
     </div>`;
 }
 
 // ---------- month drill-down (기준월 선택에 연동) ----------
 function renderDrill(){
-  const idx = refIdx;
+  const {cur} = getPeriods();
   const grid = document.getElementById('drillGrid');
   grid.innerHTML = '';
   MC_NAMES.forEach(mc => {
-    const total = DATA.midcatTotals[mc][idx] || 0;
+    const total = pSum(DATA.midcatTotals[mc], cur) || 0;
     const detail = DATA.subcatDetail[mc] || {};
-    let items = Object.keys(detail).map(name => ({name, value: detail[name][idx] || 0}));
+    let items = Object.keys(detail).map(name => ({name, value: pSum(detail[name], cur) || 0}));
     items = items.filter(it => Math.abs(it.value) > 0.5);
     if (items.length === 0 && total !== 0){
       items = [{name: mc, value: total}];
@@ -1217,7 +1609,7 @@ function renderDrill(){
         <div class="val">${fmtWon(it.value)} (${pct.toFixed(0)}%)</div>
       </div>`;
     }).join('');
-    card.innerHTML = `<h3>${mc} 총액: ${fmtWon(total)}</h3>${rowsHtml || '<div class="note">데이터 없음</div>'}`;
+    card.innerHTML = `<h3>${mc} 총액${isQ() ? ` (${cur.shortLabel})` : ''}: ${fmtWon(total)}</h3>${rowsHtml || '<div class="note">데이터 없음</div>'}`;
     grid.appendChild(card);
   });
 }
@@ -1228,22 +1620,21 @@ function renderDrill(){
 // 매출액 대비 비율로 계산돼 있는 배열이라 그대로 재사용.
 function renderKeyMetricsTable(){
   const metrics = [
-    {label:'노무비', arr: DATA.laborCost, ratio: DATA.laborRatio},
-    {label:'수도광열비', arr: DATA.utilitiesCost, ratio: DATA.utilitiesRatio},
+    {label:'노무비', arr: DATA.laborCost},
+    {label:'수도광열비', arr: DATA.utilitiesCost},
   ];
-  const prevIdx = refIdx - 1;
-  const yoyIdx = refIdx - 12;
-  const refLabel = monthLabelFull(refIdx);
-  const prevLabel = prevIdx >= 0 ? monthLabelFull(prevIdx) : '전월';
-  const yoyLabel = yoyIdx >= 0 ? monthLabelFull(yoyIdx) : '전년동월';
+  const {cur, prev: prevP, yoy: yoyP} = getPeriods();
+  const refLabel = cur.shortLabel;
+  const prevLabel = prevP ? prevP.shortLabel : PREV_WORD();
+  const yoyLabel = yoyP ? yoyP.shortLabel : (isQ() ? '전년동분기' : '전년동월');
 
   const rows = metrics.map(m => {
-    const v = m.arr[refIdx];
-    const prev = prevIdx >= 0 ? m.arr[prevIdx] : null;
-    const yprev = yoyIdx >= 0 ? m.arr[yoyIdx] : null;
-    const ratioNow = m.ratio[refIdx];
-    const ratioPrev = prevIdx >= 0 ? m.ratio[prevIdx] : null;
-    const ratioYprev = yoyIdx >= 0 ? m.ratio[yoyIdx] : null;
+    const v = pSum(m.arr, cur);
+    const prev = pSum(m.arr, prevP);
+    const yprev = pSum(m.arr, yoyP);
+    const ratioNow = pRatio(m.arr, cur);
+    const ratioPrev = pRatio(m.arr, prevP);
+    const ratioYprev = pRatio(m.arr, yoyP);
     const mom = (ratioNow!=null && ratioPrev!=null) ? (ratioNow-ratioPrev)*100 : null;
     const yoy = (ratioNow!=null && ratioYprev!=null) ? (ratioNow-ratioYprev)*100 : null;
     return `<tr>
@@ -1260,11 +1651,11 @@ function renderKeyMetricsTable(){
     <h3 style="font-size:13px;margin:0 0 10px;">핵심 관리 항목 비교 — 노무비 · 수도광열비</h3>
     <div class="chart-scroll"><table class="compare-table">
       <thead><tr>
-        <th>항목</th><th>${refLabel}</th><th>${prevLabel}</th><th>전월비</th><th>${yoyLabel}</th><th>전년비</th>
+        <th>항목</th><th>${refLabel}</th><th>${prevLabel}</th><th>${PREV_WORD()}비</th><th>${yoyLabel}</th><th>전년비</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table></div>
-    <p class="section-sub" style="margin:8px 0 0;">※ 전월비·전년비는 매출액 대비 비중의 변화(%p) 기준입니다.</p>`;
+    <p class="section-sub" style="margin:8px 0 0;">※ ${PREV_WORD()}비·전년비는 매출액 대비 비중의 변화(%p) 기준입니다.</p>`;
 }
 
 // ---------- section 3: 경비 항목별 추이 (지수 차트 + 토글 범례) ----------
@@ -1301,7 +1692,7 @@ function renderExpenseTrendChart(){
     emptyNote.hidden = true;
     drawLineChart('chartExpTrend', series, labels, {
       padL:44,
-      highlightIdx: refIdx,
+      ...chartHighlight(),
       fmt: v => Math.round(v) + (v>=100 ? ' (+' : ' (') + (v-100).toFixed(0) + '%)'
     });
   }
@@ -1314,18 +1705,17 @@ function renderExpenseTrendChart(){
 // 항목이 탭마다 다른 비중 증감(%p)으로 보이는 불일치가 있었다 (2026-07 소모품비 기준
 // 이 표는 경비-내 비중 변화 +8.7%p, 탭4는 매출액 대비 비중 변화 +6.0%p 로 서로 달랐음).
 function renderExpenseShareTable(){
-  const idx = refIdx;
-  const prevIdx = refIdx - 1;
-  const revNow = DATA.revenue[idx] || 0;
-  const revPrev = prevIdx >= 0 ? (DATA.revenue[prevIdx] || 0) : null;
-  const refLabel = monthLabelFull(refIdx);
-  const prevLabel = prevIdx >= 0 ? monthLabelFull(prevIdx) : '전월';
+  const {cur, prev: prevP} = getPeriods();
+  const revNow = pSum(DATA.revenue, cur) || 0;
+  const revPrev = prevP ? (pSum(DATA.revenue, prevP) || 0) : null;
+  const refLabel = cur.shortLabel;
+  const prevLabel = prevP ? prevP.shortLabel : PREV_WORD();
 
   let rows = EXP_ITEMS.map(it => {
-    const v = it.amounts[idx] || 0;
-    const prevV = prevIdx >= 0 ? (it.amounts[prevIdx] || 0) : null;
+    const v = pSum(it.amounts, cur) || 0;
+    const prevV = prevP ? (pSum(it.amounts, prevP) || 0) : null;
     const share = revNow ? (v/revNow*100) : 0;
-    const prevShare = (prevIdx >= 0 && revPrev) ? (prevV/revPrev*100) : null;
+    const prevShare = (prevP && revPrev) ? (prevV/revPrev*100) : null;
     const diff = (prevShare === null) ? null : (share - prevShare);
     return {name: it.name, v, share, prevShare, diff};
   }).filter(r => Math.abs(r.v) > 0.5 || (r.prevShare !== null && Math.abs(r.prevShare) > 0.01));
@@ -1344,27 +1734,26 @@ function renderExpenseShareTable(){
 
   document.getElementById('expShareTable').innerHTML = `
     <h3 style="font-size:13px;margin:0 0 8px;">경비 항목별 매출액 대비 비중 — ${refLabel} vs ${prevLabel}</h3>
-    <p class="section-sub" style="margin:0 0 10px;">각 항목 금액이 매출액에서 차지하는 비중이며, 전월과 비교한 비중 증감(%p)을 함께 보여줍니다.</p>
+    <p class="section-sub" style="margin:0 0 10px;">각 항목 금액이 매출액에서 차지하는 비중이며, ${PREV_WORD()}과 비교한 비중 증감(%p)을 함께 보여줍니다.</p>
     <div class="chart-scroll"><table class="compare-table">
       <thead><tr><th>항목</th><th>${refLabel} 금액</th><th>비중</th><th>${prevLabel} 비중</th><th>비중 증감</th></tr></thead>
       <tbody>${rowsHtml || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">데이터 없음</td></tr>'}</tbody>
     </table></div>`;
 }
 
-// ---------- section 4-1: 경비+노무비 통합, 전월 대비 매출액 비중 변동 TOP 3 ----------
+// ---------- 비용추이 탭: 노무비+경비+판관비 통합, 직전 기간 대비 매출액 비중 변동 TOP 3 ----------
 function computeAnomalyTop3(){
-  const idx = refIdx;
-  const prevIdx = refIdx - 1;
-  if (prevIdx < 0) return [];
+  const {cur, prev} = getPeriods();
+  if (!prev) return [];
   return ANOMALY_ITEMS.map(it => {
-    const ratioNow = it.ratio[idx];
-    const ratioPrev = it.ratio[prevIdx];
+    const ratioNow = pRatio(it.amounts, cur);
+    const ratioPrev = pRatio(it.amounts, prev);
     if (ratioNow === null || ratioPrev === null) return null;
     return {
       name: it.name,
       group: it.group,
-      amountNow: it.amounts[idx],
-      amountPrev: it.amounts[prevIdx],
+      amountNow: pSum(it.amounts, cur),
+      amountPrev: pSum(it.amounts, prev),
       shareNow: ratioNow * 100,
       sharePrev: ratioPrev * 100,
       ppChange: (ratioNow - ratioPrev) * 100,
@@ -1377,6 +1766,12 @@ function computeAnomalyTop3(){
 // Supabase monthly_comments 테이블에 연도+월 단위로 하나씩 저장 - PIN을 아는 팀원 누구나
 // 읽고 덮어쓸 수 있다 (개별 작성자 구분 없음, 지금 요구사항엔 그거면 충분해서).
 function renderMonthlyComment(){
+  // 분기별 보기에서는 분기 단위 종합의견을 따로 둔다 (월별 monthly_comments 테이블은 월 단위
+  // 전용이라, 분기 의견은 standing_notes에 "summary::26-Q3" 같은 key로 저장).
+  if (isQ()){
+    renderPeriodNote('monthlyComment', 'summary', '종합의견', '이 분기 실적에 대한 종합의견을 남겨주세요.');
+    return;
+  }
   const m = DATA.months[refIdx];
   const yearShort = String(m.year).slice(2); // "2026" -> "26", 백엔드/DB는 2자리 연도 문자열 사용
   const key = `${yearShort}-${m.month}`;
@@ -1456,8 +1851,9 @@ function renderAgendaNotes(){
 }
 
 function renderAnomalyTop3(){
-  const refLabel = monthLabelFull(refIdx);
-  const prevLabel = refIdx > 0 ? monthLabelFull(refIdx-1) : '전월';
+  const {cur, prev} = getPeriods();
+  const refLabel = cur.label;
+  const prevLabel = prev ? prev.label : PREV_WORD();
   const top3 = computeAnomalyTop3();
   const el = document.getElementById('anomalyRow');
   if (top3.length === 0){
@@ -1482,18 +1878,18 @@ function renderAnomalyTop3(){
       </div>
     </div>`;
   }).join('') +
-  `<p class="section-sub" style="grid-column:1/-1;margin:10px 0 0;">${prevLabel} → ${refLabel} 기준 · 노무비·경비 소분류 전체 중 매출액 대비 비중이 가장 크게 움직인 순서</p>`;
+  `<p class="section-sub" style="grid-column:1/-1;margin:10px 0 0;">${prevLabel} → ${refLabel} 기준 · 노무비·경비·판관비 소분류 전체 중 매출액 대비 비중이 가장 크게 움직인 순서</p>`;
 }
 
 // ---------- section 4-2: 원인 분석 (A. 거래처/상세내역 후보 + B. 담당자 메모) ----------
 function getDetailRows(group, name){
   return (DETAIL_DATA[group] && DETAIL_DATA[group][name]) || [];
 }
-function computeCauseCandidates(group, name, idx, prevIdx){
-  if (prevIdx < 0) return [];
+function computeCauseCandidates(group, name, curP, prevP){
+  if (!prevP) return [];
   return getDetailRows(group, name).map(r => {
-    const now = r.amounts[idx] || 0;
-    const prev = r.amounts[prevIdx] || 0;
+    const now = pSum(r.amounts, curP) || 0;
+    const prev = pSum(r.amounts, prevP) || 0;
     return {vendor: r.vendor || '(거래처 미기재)', detail: r.detail || '', now, prev, change: now - prev};
   })
     .filter(r => Math.abs(r.change) > 0.5)
@@ -1502,26 +1898,27 @@ function computeCauseCandidates(group, name, idx, prevIdx){
 }
 // 항목·월별 원인 메모 키 - standing_notes 테이블을 종합의견/향후 도입 안건과 공유해서 쓴다
 // (key만 다르게 주면 되므로 새 테이블/함수 없이 재사용 가능).
-function causeNoteKey(year, month, group, name){
-  return `cause::${year}-${month}::${group}::${name}`;
+// periodKey는 월이면 "26-8"(기존 저장분과 동일한 형식), 분기면 "26-Q3".
+function causeNoteKey(periodKey, group, name){
+  return `cause::${periodKey}::${group}::${name}`;
 }
 function renderCauseAnalysis(){
-  const idx = refIdx;
-  const prevIdx = refIdx - 1;
-  const refLabel = monthLabelFull(refIdx);
-  const prevLabel = prevIdx >= 0 ? monthLabelFull(prevIdx) : '전월';
+  const {cur, prev: prevP} = getPeriods();
+  const refLabel = cur.label;
+  const prevLabel = prevP ? prevP.label : PREV_WORD();
+  document.getElementById('causeIntro').textContent =
+    `각 항목 아래에 (A) 원본 장부의 거래처·상세내역 기준 ${PREV_WORD()} 대비 변화 후보와, (B) 담당자가 남긴 메모를 함께 보여줍니다.`;
   const top3 = computeAnomalyTop3();
   const el = document.getElementById('causeAnalysis');
   if (top3.length === 0){
     el.innerHTML = '';
     return;
   }
-  const yearShort = String(DATA.months[idx].year).slice(2);
   el.innerHTML = top3.map((r,i) => {
     const up = r.ppChange >= 0;
     const cls = up ? 'neg' : 'pos';
     const arrow = up ? '▲' : '▼';
-    const candidates = computeCauseCandidates(r.group, r.name, idx, prevIdx);
+    const candidates = computeCauseCandidates(r.group, r.name, cur, prevP);
     const candHtml = candidates.length ? candidates.map(c => {
       const tag = (c.prev===0 && c.now!==0) ? '<span class="cause-tag new">신규</span>'
                 : (c.now===0 && c.prev!==0) ? '<span class="cause-tag gone">중단</span>' : '';
@@ -1538,7 +1935,7 @@ function renderCauseAnalysis(){
       </div>`;
     }).join('') : '<p class="note" style="margin:0;">이 항목은 거래처별 세부 내역 데이터가 없습니다.</p>';
 
-    const noteKey = causeNoteKey(yearShort, DATA.months[idx].month, r.group, r.name);
+    const noteKey = causeNoteKey(cur.key, r.group, r.name);
     const existingNote = STANDING_NOTES[noteKey];
 
     return `<div class="card cause-card" data-group="${r.group}" data-name="${r.name}">
@@ -1590,34 +1987,29 @@ function renderCauseAnalysis(){
 
 // ---------- tab 5: 가운 매출 (렌탈가운_멸균 · 렌탈가운_비멸균 · 렌탈 멸균 프로텍트커버) ----------
 // 세탁 매출과 동일하게 합계를 가장 먼저, 크게 보여주고 그 아래에 항목별 내역을 배치한다.
-function renderGownSnapshot(){
-  const totalArr = GOWN_DATA.total;
-  const totalV = totalArr[refIdx];
-  const totalPrev = refIdx > 0 ? totalArr[refIdx-1] : null;
-  const totalYprev = refIdx >= 12 ? totalArr[refIdx-12] : null;
-  const topHtml = `<div class="snap-metric">
-      <div class="label">가운 매출 합계</div>
-      <div class="value">${fmtWon(totalV)}</div>
-      <div class="deltas">${deltaBadge(pctChange(totalV,totalPrev),'전월 ')}${deltaBadgeAmount(totalV,totalPrev)}${deltaBadge(pctChange(totalV,totalYprev),'전년 ')}</div>
-    </div>`;
-
-  const rows = GOWN_ITEM_NAMES.map(name => ({label:name, arr: GOWN_DATA.items[name]}));
-  const restHtml = rows.map(r => {
-    const v = r.arr[refIdx];
-    const prev = refIdx > 0 ? r.arr[refIdx-1] : null;
-    const yprev = refIdx >= 12 ? r.arr[refIdx-12] : null;
-    const mom = pctChange(v, prev);
-    const yoy = pctChange(v, yprev);
+// 세탁·가운 스냅샷 공용 - 합계를 크게, 구성 항목을 작게. 기준 기간(월/분기) 합계로 계산.
+function renderRevenueBreakdownSnapshot(containerId, totalLabel, totalArr, rows, noteSuffix){
+  const {cur, prev, yoy} = getPeriods();
+  const PW = PREV_WORD();
+  const metricHtml = (label, arr) => {
+    const v = pSum(arr, cur);
+    const pv = pSum(arr, prev);
+    const yv = pSum(arr, yoy);
     return `<div class="snap-metric">
-      <div class="label">${r.label}</div>
+      <div class="label">${label}</div>
       <div class="value">${fmtWon(v)}</div>
-      <div class="deltas">${deltaBadge(mom,'전월 ')}${deltaBadgeAmount(v,prev)}${deltaBadge(yoy,'전년 ')}</div>
+      <div class="deltas">${deltaBadge(pctChange(v,pv),PW+' ')}${deltaBadgeAmount(v,pv)}${deltaBadge(pctChange(v,yv),'전년 ')}</div>
     </div>`;
-  }).join('');
-  document.getElementById('gownSnapshot').innerHTML =
-    `<div class="snapshot-top">${topHtml}</div>
-    <div class="snapshot-rest">${restHtml}</div>
-    <p class="snapshot-note">※ 기준월(${monthLabelFull(refIdx)}) 기준, 인천세종병원·부천세종병원 매출 합산액입니다.</p>`;
+  };
+  document.getElementById(containerId).innerHTML =
+    `<div class="snapshot-top">${metricHtml(totalLabel, totalArr)}</div>
+    <div class="snapshot-rest">${rows.map(r => metricHtml(r.label, r.arr)).join('')}</div>
+    <p class="snapshot-note">※ ${REF_WORD()}(${cur.label}) 기준, ${noteSuffix}</p>`;
+}
+function renderGownSnapshot(){
+  renderRevenueBreakdownSnapshot('gownSnapshot', '가운 매출 합계', GOWN_DATA.total,
+    GOWN_ITEM_NAMES.map(name => ({label:name, arr: GOWN_DATA.items[name]})),
+    '인천세종병원·부천세종병원 매출 합산액입니다.');
 }
 
 // ---------- tab 5: 세탁 매출 (일반세탁물 - 부천/인천세종병원은 일반세탁물만, 나머지 3개
@@ -1631,33 +2023,9 @@ const LAUNDRY_VENDOR_COLORS = {
 // 전체 합계를 가장 먼저, 크게 보여주고(.snapshot-top 재사용) 그 아래에 구성 병원별
 // 내역을 작게 배치한다 - "전체 세탁매출이 먼저 눈에 띄어야 한다"는 요청에 맞춤.
 function renderLaundrySnapshot(){
-  const totalArr = LAUNDRY_DATA.total;
-  const totalV = totalArr[refIdx];
-  const totalPrev = refIdx > 0 ? totalArr[refIdx-1] : null;
-  const totalYprev = refIdx >= 12 ? totalArr[refIdx-12] : null;
-  const topHtml = `<div class="snap-metric">
-      <div class="label">전체 세탁매출</div>
-      <div class="value">${fmtWon(totalV)}</div>
-      <div class="deltas">${deltaBadge(pctChange(totalV,totalPrev),'전월 ')}${deltaBadgeAmount(totalV,totalPrev)}${deltaBadge(pctChange(totalV,totalYprev),'전년 ')}</div>
-    </div>`;
-
-  const rows = LAUNDRY_VENDORS.map(name => ({label:name, arr: LAUNDRY_DATA.items[name]}));
-  const restHtml = rows.map(r => {
-    const v = r.arr[refIdx];
-    const prev = refIdx > 0 ? r.arr[refIdx-1] : null;
-    const yprev = refIdx >= 12 ? r.arr[refIdx-12] : null;
-    const mom = pctChange(v, prev);
-    const yoy = pctChange(v, yprev);
-    return `<div class="snap-metric">
-      <div class="label">${r.label}</div>
-      <div class="value">${fmtWon(v)}</div>
-      <div class="deltas">${deltaBadge(mom,'전월 ')}${deltaBadgeAmount(v,prev)}${deltaBadge(yoy,'전년 ')}</div>
-    </div>`;
-  }).join('');
-  document.getElementById('laundrySnapshot').innerHTML =
-    `<div class="snapshot-top">${topHtml}</div>
-    <div class="snapshot-rest">${restHtml}</div>
-    <p class="snapshot-note">※ 기준월(${monthLabelFull(refIdx)}) 기준, 병원별 일반세탁물 매출입니다.</p>`;
+  renderRevenueBreakdownSnapshot('laundrySnapshot', '전체 세탁매출', LAUNDRY_DATA.total,
+    LAUNDRY_VENDORS.map(name => ({label:name, arr: LAUNDRY_DATA.items[name]})),
+    '병원별 일반세탁물 매출입니다.');
 }
 
 function renderLaundryChart(){
@@ -1665,7 +2033,7 @@ function renderLaundryChart(){
   const labels = buildMonthLabels(n);
   const series = LAUNDRY_VENDORS.map(name => ({name, color: LAUNDRY_VENDOR_COLORS[name], data: LAUNDRY_DATA.items[name].slice(0,n)}));
   series.push({name:'세탁 매출 합계', color:'var(--s2)', data: LAUNDRY_DATA.total.slice(0,n)});
-  drawLineChart('chartLaundry', series, labels, {padL:64, highlightIdx: refIdx});
+  drawLineChart('chartLaundry', series, labels, {padL:64, ...chartHighlight()});
   renderLegend('legLaundry', series.map(s => ({name:s.name, color:s.color})));
 }
 
@@ -1685,11 +2053,9 @@ function renderSingleMetricQuarterlyTable(containerId, title, totalArr){
     const total25 = sumRange(totalArr, start25, 3);
     const total26 = actualMonths26 > 0 ? sumRange(totalArr, start26, actualMonths26) : null;
     const total25Comp = actualMonths26 > 0 ? sumRange(totalArr, start25, actualMonths26) : null;
-    return {q: q+1, partial: actualMonths26 > 0 && actualMonths26 < 3, actualMonths26, total25, total26, yoy: pctChange(total26, total25Comp)};
-  });
-  rows.forEach((r, i) => {
-    const prevTotal = i === 0 ? rows[3].total25 : rows[i-1].total26;
-    r.qoq = pctChange(r.total26, prevTotal);
+    const prevComp = actualMonths26 > 0 ? sumRange(totalArr, start26 - 3, actualMonths26) : null;
+    return {q: q+1, partial: actualMonths26 > 0 && actualMonths26 < 3, actualMonths26, total25, total26,
+      yoy: pctChange(total26, total25Comp), qoq: pctChange(total26, prevComp)};
   });
   const trs = rows.map(r => {
     const isCurrent = r.q === currentQ;
@@ -1723,22 +2089,45 @@ function renderGownChart(){
   const labels = buildMonthLabels(n);
   const series = GOWN_ITEM_NAMES.map(name => ({name, color: GOWN_ITEM_COLORS[name], data: GOWN_DATA.items[name].slice(0,n)}));
   series.push({name:'가운 매출 합계', color:'var(--s1)', data: GOWN_DATA.total.slice(0,n)});
-  drawLineChart('chartGown', series, labels, {padL:64, highlightIdx: refIdx});
+  drawLineChart('chartGown', series, labels, {padL:64, ...chartHighlight()});
   renderLegend('legGown', series.map(s => ({name:s.name, color:s.color})));
 }
 
 function renderFootnote(){
   document.getElementById('footnote').textContent =
-    `※ '비율계상(%)' 원본 컬럼은 항목별 배부율이라 매출액 대비 비율과 의미가 달라, 이 대시보드의 모든 비율은 직접 재계산한 값입니다. 실적 마감월(${monthLabelFull(ACTUAL_CUTOFF_IDX)})은 매출이 0이 아닌 마지막 달을 자동으로 찾아 반영하며, 그 이후 달은 아직 데이터가 입력되지 않아 차트에서 표시하지 않습니다. 기준월 선택은 위 마감월까지의 실적 중 원하는 달을 골라 스냅샷·누적/예상·상세 내역을 볼 수 있게 해줍니다.`;
+    `※ '비율계상(%)' 원본 컬럼은 항목별 배부율이라 매출액 대비 비율과 의미가 달라, 이 대시보드의 모든 비율은 직접 재계산한 값입니다. 실적 마감월(${monthLabelFull(ACTUAL_CUTOFF_IDX)})은 매출이 0이 아닌 마지막 달을 자동으로 찾아 반영하며, 그 이후 달은 아직 데이터가 입력되지 않아 차트에서 표시하지 않습니다. 기준월(또는 기준 분기) 선택은 위 마감월까지의 실적 중 원하는 기간을 골라 스냅샷·누적/예상·상세 내역을 볼 수 있게 해줍니다. 연말 예상은 기준 시점이 속한 분기의 월평균이 남은 달에도 이어진다고 가정한 값입니다.`;
 }
 
+// 분기별 표(상단 매출액·매출총이익, 세탁/가운 매출, 비용추이 총비용)는 "분기별" 보기에서만 노출.
+function applyQuarterOnly(){
+  document.querySelectorAll('.quarter-only').forEach(el => { el.hidden = !isQ(); });
+}
 function renderAll(){
-  renderRefPill();
+  renderRefBar();
   renderSnapshot();
+  renderKPI();
+  applyQuarterOnly();
+  renderQuarterlyTable();
   renderFootnote();
   renderTabContent(activeTab);
 }
 
+// 비용 세부 탭의 접기/펼치기 상태는 브라우저별로 기억한다. 접힌 상태에서는 차트 폭을
+// 잴 수 없으므로, 펼칠 때 해당 탭 차트를 다시 그린다.
+function bindCollapsibles(){
+  document.querySelectorAll('details.subsec').forEach(d => {
+    try {
+      const saved = localStorage.getItem('steri_subsec_' + d.dataset.subsec);
+      if (saved === 'open') d.open = true;
+      else if (saved === 'closed') d.open = false;
+    } catch(e){}
+    d.addEventListener('toggle', () => {
+      try { localStorage.setItem('steri_subsec_' + d.dataset.subsec, d.open ? 'open' : 'closed'); } catch(e){}
+      if (d.open) redrawCharts(activeTab);
+    });
+  });
+}
+let dashboardStarted = false;
 function startDashboard(){
   try {
     const saved = localStorage.getItem('steri_ref_idx');
@@ -1746,15 +2135,25 @@ function startDashboard(){
       const v = parseInt(saved, 10);
       if (!isNaN(v) && v >= 0 && v <= ACTUAL_CUTOFF_IDX) refIdx = v;
     }
+    const savedQ = localStorage.getItem('steri_ref_qstart');
+    if (savedQ !== null){
+      const v = parseInt(savedQ, 10);
+      if (!isNaN(v) && v >= 0 && v <= ACTUAL_CUTOFF_IDX && v % 3 === 0) refQStart = v;
+    }
+    const savedMode = localStorage.getItem('steri_period_mode');
+    if (savedMode === 'month' || savedMode === 'quarter') periodMode = savedMode;
   } catch(e){}
+  // 업로드 후 loadAndRender()가 다시 불려도 이벤트 리스너가 중복 등록되지 않게 한 번만 바인딩
+  if (!dashboardStarted){
+    bindRefControls();
+    initTabs();
+    window.addEventListener('resize', () => redrawCharts(activeTab));
+    bindCollapsibles();
+    dashboardStarted = true;
+  }
   populateRefSelect();
-  document.getElementById('refMonthSel').value = refIdx;
-  initTabs();
   renderAgendaNotes();
   renderAll();
-  // sec4 has no charts that need resize-driven redraws, and a full re-render there would
-  // wipe an in-progress, unsaved 원인 메모 draft - skip it while that tab is active.
-  window.addEventListener('resize', () => { if (activeTab !== 'sec4') renderAll(); });
 }
 
 // ================= backend integration (Supabase Edge Functions) =================
