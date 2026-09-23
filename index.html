@@ -149,6 +149,18 @@ section{margin-bottom:44px; padding-top:6px;}
 .kpi-group.g-proj{border-style:dashed; border-color:var(--baseline);}
 .kpi-group .kpi{background:var(--surface-2);}
 .kpi-group-label .dot{display:none;}
+.kpi-oneoff-note{font-size:11px; color:var(--text-muted); margin:-2px 0 10px; line-height:1.5;}
+.oneoff-admin{margin-top:12px;}
+.oneoff-admin h4{font-size:12.5px; margin:0 0 4px;}
+.oneoff-admin .hint{font-size:11px; color:var(--text-muted); margin:0 0 10px;}
+.oneoff-list{display:flex; flex-direction:column; gap:6px; margin-bottom:10px;}
+.oneoff-row{display:flex; align-items:center; gap:10px; font-size:12px; background:var(--surface-2); border-radius:7px; padding:6px 10px;}
+.oneoff-row .amt{font-weight:700; margin-left:auto; font-variant-numeric:tabular-nums;}
+.oneoff-row button{background:none; border:1px solid var(--border); border-radius:6px; padding:2px 8px; font-size:11px; color:var(--text-secondary); cursor:pointer; font-family:inherit;}
+.oneoff-form{display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:16px;}
+.oneoff-form input{background:var(--surface-2); color:var(--text-primary); border:1px solid var(--border); border-radius:7px; padding:5px 9px; font-size:12px; font-family:inherit;}
+.oneoff-form button{background:var(--s1); color:#fff; border:none; border-radius:7px; padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit;}
+.oneoff-status{font-size:11px; color:var(--text-muted);}
 .kpi-group-label{display:flex; align-items:center; gap:7px; font-size:12px; font-weight:700; color:var(--text-secondary); margin-bottom:10px;}
 .kpi-group-label .dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
 .kpi-row{display:grid; grid-template-columns:repeat(2,1fr); gap:10px;}
@@ -420,7 +432,7 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
     <p class="section-sub" style="margin:0 0 12px;">일반세탁물 매출 - 부천·인천세종병원은 일반세탁물만, 파주·일산중심재활·뉴고려병원은 매출 전체(어차피 일반세탁물뿐입니다).</p>
     <div class="card" id="laundrySnapshot" style="margin-bottom:16px;"></div>
     <div class="card" style="margin-bottom:16px;">
-      <h3 style="font-size:13px;margin:0 0 8px;">월별 세탁 매출 추이</h3>
+      <h3 style="font-size:13px;margin:0 0 8px;">매출원별 세탁매출 추이</h3>
       <div class="chart-scroll"><svg id="chartLaundry" width="1020" height="240"></svg></div>
       <div class="legend" id="legLaundry"></div>
     </div>
@@ -430,7 +442,7 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
     <p class="section-sub" style="margin:0 0 12px;">렌탈가운_멸균 · 렌탈가운_비멸균 · 렌탈 멸균 프로텍트커버 매출(인천세종병원·부천세종병원 합산).</p>
     <div class="card" id="gownSnapshot" style="margin-bottom:16px;"></div>
     <div class="card" style="margin-bottom:16px;">
-      <h3 style="font-size:13px;margin:0 0 8px;">월별 가운 매출 추이</h3>
+      <h3 style="font-size:13px;margin:0 0 8px;">가운별 매출 추이</h3>
       <div class="chart-scroll"><svg id="chartGown" width="1020" height="240"></svg></div>
       <div class="legend" id="legGown"></div>
     </div>
@@ -448,6 +460,7 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
       <button id="uploadBtn">업로드</button>
       <span class="upload-status" id="uploadStatus"></span>
     </div>
+    <div class="card oneoff-admin" id="oneoffAdmin"></div>
   </details>
 </div>
 
@@ -934,6 +947,55 @@ function costDeltaBadgePP(v, prefix){
   const cls = v > 0 ? 'neg' : 'pos';
   return `<span class="delta-badge ${cls}"><span class="k">${prefix}</span>${v>=0?'▲':'▼'}${Math.abs(v).toFixed(1)}%p</span>`;
 }
+// ================= 일회성 비용 (연말 예상 추세에서 제외) =================
+// 담당자가 "데이터 관리"에서 지정한다. standing_notes의 'oneoff_config' key에 JSON으로 저장:
+//   excluded: [{ym:"26-8", group:"판관비", item:"광고선전비", memo}]  - 실적은 그대로 두고, 추세(분기 월평균)
+//             계산에서만 해당 월·항목 금액을 뺀다 (예: 8월 KHF 박람회 광고선전비)
+//   planned:  [{ym:"26-10", group:"판관비", amount:5970000, memo}]  - 아직 안 나온 예정 비용을 연말 예상에 더한다
+const ONEOFF_KEY = 'oneoff_config';
+function oneoffConfig(){
+  let cfg = null;
+  try { cfg = JSON.parse((STANDING_NOTES[ONEOFF_KEY] && STANDING_NOTES[ONEOFF_KEY].content) || 'null'); } catch(e){}
+  cfg = cfg || {};
+  return {excluded: Array.isArray(cfg.excluded) ? cfg.excluded : [], planned: Array.isArray(cfg.planned) ? cfg.planned : []};
+}
+function ymToIdx(ym){
+  const [yy, m] = String(ym).split('-');
+  return DATA.months.findIndex(x => String(x.year).slice(2) === yy && x.month === parseInt(m, 10));
+}
+function idxToYm(i){ return `${String(DATA.months[i].year).slice(2)}-${DATA.months[i].month}`; }
+function ymLabel(ym){ const [yy, m] = String(ym).split('-'); return `${yy}년 ${m}월`; }
+function oneoffItemAmount(group, item, idx){
+  const it = ANOMALY_ITEMS.find(x => x.group === group && x.name === item);
+  return it && idx >= 0 && idx < it.amounts.length ? (it.amounts[idx] || 0) : 0;
+}
+// 추세 구간 [a,b]에 걸린 일회성 제외 항목과 금액 (groups로 한정: 매출총이익은 노무비·경비만 해당)
+function oneoffExcludedIn(a, b, groups){
+  const list = oneoffConfig().excluded.map(e => {
+    const i = ymToIdx(e.ym);
+    if (i < a || i > b || !groups.includes(e.group)) return null;
+    return {...e, amount: oneoffItemAmount(e.group, e.item, i)};
+  }).filter(e => e && e.amount);
+  return {list, total: list.reduce((s,e) => s + e.amount, 0)};
+}
+// 기준 시점 이후 ~ 같은 해 연말까지 예정된 비용
+function oneoffPlannedAfter(endIdx, groups){
+  const year = DATA.months[endIdx].year;
+  const list = oneoffConfig().planned.filter(e => {
+    const i = ymToIdx(e.ym);
+    return i > endIdx && DATA.months[i].year === year && groups.includes(e.group) && Number(e.amount);
+  });
+  return {list, total: list.reduce((s,e) => s + Number(e.amount), 0)};
+}
+function oneoffNoteHtml(excl, planned){
+  const parts = [];
+  if (excl.list.length) parts.push('일회성으로 보고 추세에서 제외: ' +
+    excl.list.map(e => `${ymLabel(e.ym)} ${escapeHtml(e.group)}·${escapeHtml(e.item)} ${fmtWon(e.amount)}${e.memo ? ` (${escapeHtml(e.memo)})` : ''}`).join(', '));
+  if (planned.list.length) parts.push('예정 비용 반영: ' +
+    planned.list.map(e => `${ymLabel(e.ym)} ${escapeHtml(e.group)} ${fmtWon(Number(e.amount))}${e.memo ? ` (${escapeHtml(e.memo)})` : ''}`).join(', '));
+  return parts.length ? `<p class="kpi-oneoff-note">※ ${parts.join(' · ')}</p>` : '';
+}
+
 // 누적 실적 / 연말 예상 - 매출추이 탭 renderKPI와 같은 방식(현재 분기 월평균 × 잔여 개월)
 function renderCostKPI(){
   const {cur} = getPeriods();
@@ -947,12 +1009,15 @@ function renderCostKPI(){
   const ytdRev = sum(DATA.revenue, ys, endIdx);
   const qStart = quarterStartOf(endIdx);
   const qCount = endIdx - qStart + 1;
-  const qAvgCost = sum(cost, qStart, endIdx) / qCount;
+  const COST_GROUPS = ['노무비','경비','판관비'];
+  const excl = oneoffExcludedIn(qStart, endIdx, COST_GROUPS);
+  const qAvgCost = (sum(cost, qStart, endIdx) - excl.total) / qCount;
   const qAvgRev = sum(DATA.revenue, qStart, endIdx) / qCount;
   const qName = `${quarterOf(endIdx)}분기`;
   const qMonthsTxt = qCount > 1 ? `${DATA.months[qStart].month}~${refMonth}월` : `${refMonth}월`;
   const remaining = 12 - refMonth;
-  const projCost = ytdCost + remaining * qAvgCost;
+  const planned = remaining > 0 ? oneoffPlannedAfter(endIdx, COST_GROUPS) : {list:[], total:0};
+  const projCost = ytdCost + remaining * qAvgCost + planned.total;
   const projRev = ytdRev + remaining * qAvgRev;
   const ytdRatio = ytdRev ? ytdCost / ytdRev : null;
   const projRatio = projRev ? projCost / projRev : null;
@@ -975,10 +1040,11 @@ function renderCostKPI(){
       <div class="kpi-group-label"><span class="dot" style="background:var(--s2)"></span>${remaining>0 ? `${refYear}년 말 예상 (${qName}(${qMonthsTxt}) 추세 지속 가정)` : `${refYear}년 실적 (연간 마감)`}</div>
       <div class="kpi-row">${kpiHtml([
         {label: remaining>0 ? '예상 총비용' : '연간 총비용 합계', value: fmtWon(projCost),
-          sub: remaining>0 ? `${qName} 월평균 ${fmtWon(qAvgCost)} × 잔여 ${remaining}개월` : ''},
+          sub: remaining>0 ? `${qName} 월평균 ${fmtWon(qAvgCost)}${excl.total ? '(일회성 제외)' : ''} × 잔여 ${remaining}개월${planned.total ? ` + 예정 ${fmtWon(planned.total)}` : ''}` : ''},
         {label: remaining>0 ? '예상 비용률' : '연간 비용률', value: fmtPct(projRatio),
           sub: remaining>0 ? `예상 총비용 ÷ 예상 매출(${fmtWon(projRev)})` : ''},
       ])}</div>
+      ${remaining>0 ? oneoffNoteHtml(excl, planned) : ''}
     </div>`;
 }
 // 분기별 총비용 & 비용률 (25년 대비) - renderQuarterlyTable과 같은 규칙(진행 중 분기는 같은 개월 수 비교)
@@ -1545,12 +1611,16 @@ function renderKPI(){
   const qIdxs = [];
   for (let i = qStart; i <= endIdx; i++) qIdxs.push(i);
   const qAvgRev = qIdxs.reduce((a,i) => a + (DATA.revenue[i] || 0), 0) / qCount;
-  const qAvgGP = qIdxs.reduce((a,i) => a + (DATA.grossProfit[i] || 0), 0) / qCount;
+  // 매출총이익은 노무비·경비만 차감한 값이라, 판관비 일회성 항목은 여기에 영향이 없다.
+  const COGS_GROUPS = ['노무비','경비'];
+  const excl = oneoffExcludedIn(qStart, endIdx, COGS_GROUPS);
+  const qAvgGP = (qIdxs.reduce((a,i) => a + (DATA.grossProfit[i] || 0), 0) + excl.total) / qCount;
   const qName = `${quarterOf(endIdx)}분기`;
   const qMonthsTxt = qCount > 1 ? `${DATA.months[qStart].month}~${refMonth}월` : `${refMonth}월`;
   const remaining = 12 - refMonth;
+  const planned = remaining > 0 ? oneoffPlannedAfter(endIdx, COGS_GROUPS) : {list:[], total:0};
   const projRev = ytdRev + remaining * qAvgRev;
-  const projGP = ytdGP + remaining * qAvgGP;
+  const projGP = ytdGP + remaining * qAvgGP - planned.total;
 
   const actualItems = [
     {label: '누적 매출', value: fmtWon(ytdRev), cls:""},
@@ -1560,7 +1630,7 @@ function renderKPI(){
     {label: remaining>0 ? '예상 매출' : '연간 매출 합계', value: fmtWon(projRev), cls:"",
       sub: remaining>0 ? `${qName} 월평균 ${fmtWon(qAvgRev)} × 잔여 ${remaining}개월` : ''},
     {label: remaining>0 ? '예상 매출총이익' : '연간 매출총이익 합계', value: fmtWon(projGP), cls: projGP>=0?"pos":"neg",
-      sub: remaining>0 ? `${qName} 월평균 ${fmtWon(qAvgGP)} × 잔여 ${remaining}개월` : ''},
+      sub: remaining>0 ? `${qName} 월평균 ${fmtWon(qAvgGP)}${excl.total ? '(일회성 제외)' : ''} × 잔여 ${remaining}개월${planned.total ? ` − 예정 ${fmtWon(planned.total)}` : ''}` : ''},
   ];
   const kpiHtml = items => items.map(it => `
       <div class="kpi">
@@ -1578,6 +1648,7 @@ function renderKPI(){
     <div class="kpi-group g-proj">
       <div class="kpi-group-label"><span class="dot" style="background:var(--s2)"></span>${remaining>0 ? `${refYear}년 말 예상 (${qName}(${qMonthsTxt}) 추세 지속 가정)` : `${refYear}년 실적 (연간 마감)`}</div>
       <div class="kpi-row">${kpiHtml(projItems)}</div>
+      ${remaining>0 ? oneoffNoteHtml(excl, planned) : ''}
     </div>`;
 }
 
@@ -2095,7 +2166,79 @@ function renderGownChart(){
 
 function renderFootnote(){
   document.getElementById('footnote').textContent =
-    `※ '비율계상(%)' 원본 컬럼은 항목별 배부율이라 매출액 대비 비율과 의미가 달라, 이 대시보드의 모든 비율은 직접 재계산한 값입니다. 실적 마감월(${monthLabelFull(ACTUAL_CUTOFF_IDX)})은 매출이 0이 아닌 마지막 달을 자동으로 찾아 반영하며, 그 이후 달은 아직 데이터가 입력되지 않아 차트에서 표시하지 않습니다. 기준월(또는 기준 분기) 선택은 위 마감월까지의 실적 중 원하는 기간을 골라 스냅샷·누적/예상·상세 내역을 볼 수 있게 해줍니다. 연말 예상은 기준 시점이 속한 분기의 월평균이 남은 달에도 이어진다고 가정한 값입니다.`;
+    `※ '비율계상(%)' 원본 컬럼은 항목별 배부율이라 매출액 대비 비율과 의미가 달라, 이 대시보드의 모든 비율은 직접 재계산한 값입니다. 실적 마감월(${monthLabelFull(ACTUAL_CUTOFF_IDX)})은 매출이 0이 아닌 마지막 달을 자동으로 찾아 반영하며, 그 이후 달은 아직 데이터가 입력되지 않아 차트에서 표시하지 않습니다. 기준월(또는 기준 분기) 선택은 위 마감월까지의 실적 중 원하는 기간을 골라 스냅샷·누적/예상·상세 내역을 볼 수 있게 해줍니다. 연말 예상은 기준 시점이 속한 분기의 월평균이 남은 달에도 이어진다고 가정한 값이며, 담당자가 일회성으로 지정한 비용은 추세에서 빼고 예정 비용은 더합니다.`;
+}
+
+// ---------- 데이터 관리: 일회성 비용 설정 UI ----------
+function renderOneoffAdmin(){
+  const cfg = oneoffConfig();
+  const box = document.getElementById('oneoffAdmin');
+  const actualOpts = DATA.months.slice(0, ACTUAL_CUTOFF_IDX+1).map((m,i) => `<option value="${idxToYm(i)}">${m.year}년 ${m.month}월</option>`).reverse().join('');
+  const futureOpts = DATA.months.map((m,i) => i > ACTUAL_CUTOFF_IDX ? `<option value="${idxToYm(i)}">${m.year}년 ${m.month}월</option>` : '').join('');
+  const itemOpts = ANOMALY_ITEMS.map(it => `<option value="${escapeHtml(it.group + '::' + it.name)}">${escapeHtml(it.group)} · ${escapeHtml(it.name)}</option>`).join('');
+  const exclRows = cfg.excluded.map((e,k) => `<div class="oneoff-row"><span>${ymLabel(e.ym)} · ${escapeHtml(e.group)} · ${escapeHtml(e.item)}${e.memo ? ` (${escapeHtml(e.memo)})` : ''}</span>
+      <span class="amt">${fmtWon(oneoffItemAmount(e.group, e.item, ymToIdx(e.ym)))}</span><button data-kind="excluded" data-k="${k}">삭제</button></div>`).join('')
+    || '<p class="hint" style="margin:0;">지정된 항목 없음</p>';
+  const planRows = cfg.planned.map((e,k) => `<div class="oneoff-row"><span>${ymLabel(e.ym)} · ${escapeHtml(e.group)}${e.memo ? ` (${escapeHtml(e.memo)})` : ''}</span>
+      <span class="amt">${fmtWon(Number(e.amount))}</span><button data-kind="planned" data-k="${k}">삭제</button></div>`).join('')
+    || '<p class="hint" style="margin:0;">등록된 예정 비용 없음</p>';
+  box.innerHTML = `
+    <h4>일회성 비용 (연말 예상 계산에서 추세 제외)</h4>
+    <p class="hint">행사비처럼 그 달에만 특별히 나온 비용을 지정하면, 누적 실적에는 그대로 두고 "현재 분기 추세" 계산에서만 뺍니다. 연말 예상 카드에 제외 내역이 함께 표시됩니다.</p>
+    <div class="oneoff-list">${exclRows}</div>
+    <div class="oneoff-form">
+      <select id="oneoffExYm">${actualOpts}</select>
+      <select id="oneoffExItem">${itemOpts}</select>
+      <input id="oneoffExMemo" placeholder="메모 (예: KHF 박람회)" style="width:170px;">
+      <button id="oneoffExAdd">추가</button>
+    </div>
+    <h4>예정 비용 (아직 발생 전, 연말 예상에 더함)</h4>
+    <p class="hint">잔금처럼 앞으로 나올 것이 확실한 일회성 비용을 월·금액으로 등록합니다. 해당 월 실적이 들어오면 자동으로 예상 계산에서 빠집니다.</p>
+    <div class="oneoff-list">${planRows}</div>
+    <div class="oneoff-form">
+      <select id="oneoffPlYm">${futureOpts}</select>
+      <select id="oneoffPlGroup"><option>판관비</option><option>경비</option><option>노무비</option></select>
+      <input id="oneoffPlAmount" type="number" placeholder="금액(원)" style="width:130px;">
+      <input id="oneoffPlMemo" placeholder="메모 (예: 박람회 잔금)" style="width:170px;">
+      <button id="oneoffPlAdd">추가</button>
+    </div>
+    <span class="oneoff-status" id="oneoffStatus"></span>`;
+
+  async function save(next){
+    const status = document.getElementById('oneoffStatus');
+    status.textContent = '저장 중…';
+    const content = JSON.stringify(next);
+    try {
+      await apiCall('save-standing-note', {token: getToken(), key: ONEOFF_KEY, content});
+      STANDING_NOTES[ONEOFF_KEY] = {key: ONEOFF_KEY, content, updated_at: new Date().toISOString()};
+      renderAll();
+      renderOneoffAdmin();
+      document.getElementById('oneoffStatus').textContent = '저장됨';
+    } catch(e){
+      status.textContent = '저장 실패: ' + e.message;
+    }
+  }
+  document.getElementById('oneoffExAdd').addEventListener('click', () => {
+    const [group, item] = document.getElementById('oneoffExItem').value.split('::');
+    const ym = document.getElementById('oneoffExYm').value;
+    const next = oneoffConfig();
+    if (next.excluded.some(e => e.ym === ym && e.group === group && e.item === item)) return;
+    next.excluded.push({ym, group, item, memo: document.getElementById('oneoffExMemo').value.trim()});
+    save(next);
+  });
+  document.getElementById('oneoffPlAdd').addEventListener('click', () => {
+    const amount = Math.round(Number(document.getElementById('oneoffPlAmount').value));
+    if (!amount){ document.getElementById('oneoffStatus').textContent = '금액을 입력해주세요.'; return; }
+    const next = oneoffConfig();
+    next.planned.push({ym: document.getElementById('oneoffPlYm').value, group: document.getElementById('oneoffPlGroup').value,
+      amount, memo: document.getElementById('oneoffPlMemo').value.trim()});
+    save(next);
+  });
+  box.querySelectorAll('.oneoff-row button').forEach(btn => btn.addEventListener('click', () => {
+    const next = oneoffConfig();
+    next[btn.dataset.kind].splice(parseInt(btn.dataset.k, 10), 1);
+    save(next);
+  }));
 }
 
 // 분기별 표(상단 매출액·매출총이익, 세탁/가운 매출, 비용추이 총비용)는 "분기별" 보기에서만 노출.
@@ -2153,6 +2296,7 @@ function startDashboard(){
   }
   populateRefSelect();
   renderAgendaNotes();
+  renderOneoffAdmin();
   renderAll();
 }
 
