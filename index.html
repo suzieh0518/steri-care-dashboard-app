@@ -207,7 +207,8 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
 .chip .dot{width:8px; height:8px; border-radius:50%; background:var(--chip-color,var(--text-muted)); opacity:.4;}
 .chip.active{color:var(--text-primary); border-color:color-mix(in srgb, var(--chip-color) 50%, var(--border)); background:color-mix(in srgb, var(--chip-color) 12%, var(--surface));}
 .chip.active .dot{opacity:1;}
-.anomaly-row{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+.anomaly-row{display:grid; grid-template-columns:repeat(4,1fr); gap:12px;}
+@media (max-width:1000px){ .anomaly-row{grid-template-columns:repeat(2,1fr);} }
 .anomaly-card{background:var(--surface-2); border:1px solid var(--border); border-radius:12px; padding:14px 16px;}
 .anomaly-rank{font-size:10.5px; font-weight:800; color:var(--text-muted); letter-spacing:.03em;}
 .anomaly-group{display:inline-block; margin:4px 0 2px; font-size:10.5px; font-weight:700; color:var(--text-secondary); background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:1px 8px;}
@@ -359,14 +360,14 @@ select{background:var(--surface-2); color:var(--text-primary); border:1px solid 
 
   <section id="sec7" class="tab-section" hidden>
     <div class="section-head"><span class="section-num">4</span><h2>비용 세부</h2></div>
-    <p class="section-sub">TOP 3·원인 분석은 노무비·경비·판관비 소분류를 통합해서 봅니다 (매출 상세내역·영업외비용 제외).</p>
+    <p class="section-sub">TOP 4·원인 분석은 노무비·경비·판관비 소분류를 통합해서 봅니다 (매출 상세내역·영업외비용 제외).</p>
 
     <details class="subsec" data-subsec="cost1" open>
       <summary class="subsection-head"><span class="subsection-num">1</span><h3 class="period-note-title">당월 특이사항</h3><span class="subsec-chevron"></span></summary>
     <div class="card" id="costNote" style="margin-bottom:28px;"></div>
     </details>
     <details class="subsec" data-subsec="cost2" open>
-      <summary class="subsection-head"><span class="subsection-num">2</span><h3>매출액 대비 비중 변동 TOP 3</h3><span class="subsec-chevron"></span></summary>
+      <summary class="subsection-head"><span class="subsection-num">2</span><h3>매출액 대비 비중 변동 TOP 4</h3><span class="subsec-chevron"></span></summary>
     <div class="card" style="margin-bottom:28px;">
       <div class="anomaly-row" id="anomalyRow"></div>
     </div>
@@ -901,7 +902,7 @@ function renderTabContent(tab){
     renderCostChart();
   } else if (tab === 'sec7'){
     renderPeriodNote('costNote', 'cost_note', '비용 특이사항', '이 기간 비용 측면의 특이사항을 남겨주세요.');
-    renderAnomalyTop3();
+    renderAnomalyTop4();
     renderCauseAnalysis();
     renderRatioChart();
     renderKeyMetricsTable();
@@ -1771,7 +1772,7 @@ function renderExpenseTrendChart(){
 }
 
 // ---------- section 3: 경비 항목별 전월대비 비중 ----------
-// 비중의 분모는 경비 총액이 아니라 매출액이다 - 대시보드 전체(스냅샷 카드, 탭4 TOP3)가
+// 비중의 분모는 경비 총액이 아니라 매출액이다 - 대시보드 전체(스냅샷 카드, 비용 세부 TOP4)가
 // "비중 = 매출액 대비"로 통일돼 있는데 이 표만 "경비 내 비중"으로 계산돼 있어서, 같은
 // 항목이 탭마다 다른 비중 증감(%p)으로 보이는 불일치가 있었다 (2026-07 소모품비 기준
 // 이 표는 경비-내 비중 변화 +8.7%p, 탭4는 매출액 대비 비중 변화 +6.0%p 로 서로 달랐음).
@@ -1812,8 +1813,8 @@ function renderExpenseShareTable(){
     </table></div>`;
 }
 
-// ---------- 비용추이 탭: 노무비+경비+판관비 통합, 직전 기간 대비 매출액 비중 변동 TOP 3 ----------
-function computeAnomalyTop3(){
+// ---------- 비용추이 탭: 노무비+경비+판관비 통합, 직전 기간 대비 매출액 비중 변동 TOP 4 ----------
+function computeAnomalyTop4(){
   const {cur, prev} = getPeriods();
   if (!prev) return [];
   return ANOMALY_ITEMS.map(it => {
@@ -1831,7 +1832,7 @@ function computeAnomalyTop3(){
     };
   }).filter(Boolean)
     .sort((a,b) => Math.abs(b.ppChange) - Math.abs(a.ppChange))
-    .slice(0,3);
+    .slice(0,4);
 }
 // ---------- tab 4, subsection 1: 종합의견 (기준월별로 팀이 직접 남기는 코멘트) ----------
 // Supabase monthly_comments 테이블에 연도+월 단위로 하나씩 저장 - PIN을 아는 팀원 누구나
@@ -1921,17 +1922,17 @@ function renderAgendaNotes(){
   });
 }
 
-function renderAnomalyTop3(){
+function renderAnomalyTop4(){
   const {cur, prev} = getPeriods();
   const refLabel = cur.label;
   const prevLabel = prev ? prev.label : PREV_WORD();
-  const top3 = computeAnomalyTop3();
+  const top4 = computeAnomalyTop4();
   const el = document.getElementById('anomalyRow');
-  if (top3.length === 0){
+  if (top4.length === 0){
     el.innerHTML = `<p class="note">${prevLabel} 데이터가 없어 비교할 수 없습니다.</p>`;
     return;
   }
-  el.innerHTML = top3.map((r,i) => {
+  el.innerHTML = top4.map((r,i) => {
     // 비중이 늘었다(원가 부담 증가)는 신호라 증가=경고색, 감소=양호색으로 표시 - 이 탭은
     // 순수 수치 추이가 아니라 "챙겨봐야 할 항목"을 짚는 탭이라 매출/이익 지표와 달리
     // 증가를 좋게 보이지 않게 방향을 고정했다.
@@ -1979,13 +1980,13 @@ function renderCauseAnalysis(){
   const prevLabel = prevP ? prevP.label : PREV_WORD();
   document.getElementById('causeIntro').textContent =
     `각 항목 아래에 (A) 원본 장부의 거래처·상세내역 기준 ${PREV_WORD()} 대비 변화 후보와, (B) 담당자가 남긴 메모를 함께 보여줍니다.`;
-  const top3 = computeAnomalyTop3();
+  const top4 = computeAnomalyTop4();
   const el = document.getElementById('causeAnalysis');
-  if (top3.length === 0){
+  if (top4.length === 0){
     el.innerHTML = '';
     return;
   }
-  el.innerHTML = top3.map((r,i) => {
+  el.innerHTML = top4.map((r,i) => {
     const up = r.ppChange >= 0;
     const cls = up ? 'neg' : 'pos';
     const arrow = up ? '▲' : '▼';
