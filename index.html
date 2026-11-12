@@ -710,11 +710,14 @@ const KR_HOLIDAY_NAMES = {
   '2026-10-09':'한글날', '2026-12-25':'성탄절',
 };
 const KR_HOLIDAYS = new Set(Object.keys(KR_HOLIDAY_NAMES));
-// "매일 운영, 국공휴일만 제외" 기준 - 병원 대상 서비스라 주말에도 운영하므로 토/일은 뺴지 않는다.
+// "월~토 운영, 일요일·국공휴일 제외" 기준 (보통 월 25일 안팎).
+// 일요일에 겹친 공휴일은 원래 휴무일이라 영업일을 추가로 줄이지 않는다.
+function isSunday(year, month, d){ return new Date(year, month - 1, d).getDay() === 0; }
 function businessDaysInMonth(year, month){
   const daysInMonth = new Date(year, month, 0).getDate();
   let count = 0;
   for (let d = 1; d <= daysInMonth; d++){
+    if (isSunday(year, month, d)) continue;
     const iso = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     if (!KR_HOLIDAYS.has(iso)) count++;
   }
@@ -725,6 +728,7 @@ function holidaysInMonth(year, month){
   const daysInMonth = new Date(year, month, 0).getDate();
   const list = [];
   for (let d = 1; d <= daysInMonth; d++){
+    if (isSunday(year, month, d)) continue; // 일요일 공휴일은 영업일수에 영향 없음
     const iso = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     if (KR_HOLIDAY_NAMES[iso]) list.push(`${month}/${d} ${KR_HOLIDAY_NAMES[iso]}`);
   }
@@ -1447,8 +1451,8 @@ function renderSnapshot(){
   const bizDaysDiff = bizDaysPrev !== null ? bizDays - bizDaysPrev : null;
   const periodHolidays = holidaysOfPeriod(cur);
   const holidayNote = periodHolidays.length
-    ? `<div class="bizdays-holidays">주말 포함, 국공휴일만 제외 · ${periodHolidays.join(', ')} 제외</div>`
-    : `<div class="bizdays-holidays">주말 포함, 국공휴일만 제외 · 해당 ${isQ() ? '분기' : '월'} 공휴일 없음</div>`;
+    ? `<div class="bizdays-holidays">월~토 운영, 일요일·국공휴일 제외 · ${periodHolidays.join(', ')} 제외</div>`
+    : `<div class="bizdays-holidays">월~토 운영, 일요일·국공휴일 제외 · 해당 ${isQ() ? '분기' : '월'} 공휴일 없음</div>`;
   const topHtml = `<div class="snap-metric">
       <div class="label">매출액${isQ() ? ` (${cur.shortLabel} 합계)` : ''}</div>
       <div class="value">${fmtWon(revV)}</div>
