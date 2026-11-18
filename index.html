@@ -696,43 +696,18 @@ function chartHighlight(){
 // (노무비/경비 reuse DATA.laborRatio / DATA.midcatRatio['경비'])
 let NET_INCOME_RATIO, GROSS_PROFIT_RATIO, OPINCOME_NEW_RATIO;
 
-// 관공서의 공휴일에 관한 규정 기준 법정공휴일 + 대체공휴일 + 2025년 1/27 임시공휴일.
-// 근로자의 날(5/1)은 관공서 공휴일이 아니라 제외 - "국공일만 제외" 기준에 맞춤.
-const KR_HOLIDAY_NAMES = {
-  '2025-01-01':'신정', '2025-01-27':'임시공휴일', '2025-01-28':'설날 연휴', '2025-01-29':'설날', '2025-01-30':'설날 연휴',
-  '2025-03-01':'삼일절', '2025-03-03':'삼일절 대체공휴일', '2025-05-05':'어린이날', '2025-05-06':'어린이날 대체공휴일', '2025-06-06':'현충일',
-  '2025-08-15':'광복절', '2025-10-03':'개천절', '2025-10-05':'추석 연휴', '2025-10-06':'추석', '2025-10-07':'추석 연휴',
-  '2025-10-08':'추석 대체공휴일', '2025-10-09':'한글날', '2025-12-25':'성탄절',
-  '2026-01-01':'신정', '2026-02-16':'설날 연휴', '2026-02-17':'설날', '2026-02-18':'설날 연휴',
-  '2026-03-01':'삼일절', '2026-03-02':'삼일절 대체공휴일', '2026-05-05':'어린이날', '2026-05-24':'부처님오신날', '2026-05-25':'부처님오신날 대체공휴일',
-  '2026-06-06':'현충일', '2026-08-15':'광복절', '2026-08-17':'광복절 대체공휴일',
-  '2026-09-24':'추석 연휴', '2026-09-25':'추석', '2026-09-26':'추석 연휴', '2026-10-03':'개천절', '2026-10-05':'개천절 대체공휴일',
-  '2026-10-09':'한글날', '2026-12-25':'성탄절',
+// 월별 영업일수 - 계산식이 아니라 현장 일보 파일(장비 가스 전기 용수 폐수_영업일.xlsx)의
+// 각 월 시트 C열 합계(작업일 1, 토요일 작업 0.5, 미작업 0)를 그대로 옮긴 값.
+// 새 달이 마감되면 여기에 'YYYY-MM': 값 한 줄을 추가한다. 값이 없는 달은 '-'로 표시.
+const BIZ_DAYS = {
+  '2025-01':22, '2025-02':22, '2025-03':22.5, '2025-04':24, '2025-05':22.5, '2025-06':21,
+  '2025-07':25, '2025-08':22.5, '2025-09':24, '2025-10':22, '2025-11':22.5, '2025-12':24,
+  '2026-01':23.5, '2026-02':20, '2026-03':24, '2026-04':24, '2026-05':23.5, '2026-06':24,
+  '2026-07':25, '2026-08':23.5, '2026-09':23, '2026-10':24.5, '2026-11':13.5,
 };
-const KR_HOLIDAYS = new Set(Object.keys(KR_HOLIDAY_NAMES));
-// "월~토 운영, 일요일·국공휴일 제외" 기준 (보통 월 25일 안팎).
-// 일요일에 겹친 공휴일은 원래 휴무일이라 영업일을 추가로 줄이지 않는다.
-function isSunday(year, month, d){ return new Date(year, month - 1, d).getDay() === 0; }
 function businessDaysInMonth(year, month){
-  const daysInMonth = new Date(year, month, 0).getDate();
-  let count = 0;
-  for (let d = 1; d <= daysInMonth; d++){
-    if (isSunday(year, month, d)) continue;
-    const iso = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    if (!KR_HOLIDAYS.has(iso)) count++;
-  }
-  return count;
-}
-// 해당 월에 낀 공휴일 목록 - "며칠 며칠 무슨 날 때문에 영업일이 줄었다"를 보여주기 위함.
-function holidaysInMonth(year, month){
-  const daysInMonth = new Date(year, month, 0).getDate();
-  const list = [];
-  for (let d = 1; d <= daysInMonth; d++){
-    if (isSunday(year, month, d)) continue; // 일요일 공휴일은 영업일수에 영향 없음
-    const iso = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    if (KR_HOLIDAY_NAMES[iso]) list.push(`${month}/${d} ${KR_HOLIDAY_NAMES[iso]}`);
-  }
-  return list;
+  const v = BIZ_DAYS[`${year}-${String(month).padStart(2,'0')}`];
+  return v === undefined ? null : v;
 }
 
 function monthLabelFull(idx){
@@ -1425,10 +1400,8 @@ function deltaBadgeAmount(cur, prev){
 // 변동성이 커서 오해를 주기 쉽고, 경영 관점에서는 매출 대비 비중 변화가 더 의미있는 지표라서.
 function bizDaysOfPeriod(p){
   if (!p) return null;
-  return p.idxs.reduce((a,i) => a + businessDaysInMonth(DATA.months[i].year, DATA.months[i].month), 0);
-}
-function holidaysOfPeriod(p){
-  return p.idxs.flatMap(i => holidaysInMonth(DATA.months[i].year, DATA.months[i].month));
+  const vals = p.idxs.map(i => businessDaysInMonth(DATA.months[i].year, DATA.months[i].month));
+  return vals.some(v => v === null) ? null : vals.reduce((a,v) => a + v, 0);
 }
 // 영업이익(판관비 차감 후) 값이 없는 실적월이 남아 있을 때만 안내한다 - 새 서식(매출총이익·
 // 영업이익 행 포함) 엑셀이 업로드된 연도는 자동으로 값이 채워지므로 문구도 사라진다.
@@ -1448,11 +1421,8 @@ function renderSnapshot(){
   const revYoy = pctChange(revV, revYprev);
   const bizDays = bizDaysOfPeriod(cur);
   const bizDaysPrev = bizDaysOfPeriod(prev);
-  const bizDaysDiff = bizDaysPrev !== null ? bizDays - bizDaysPrev : null;
-  const periodHolidays = holidaysOfPeriod(cur);
-  const holidayNote = periodHolidays.length
-    ? `<div class="bizdays-holidays">월~토 운영, 일요일·국공휴일 제외 · ${periodHolidays.join(', ')} 제외</div>`
-    : `<div class="bizdays-holidays">월~토 운영, 일요일·국공휴일 제외 · 해당 ${isQ() ? '분기' : '월'} 공휴일 없음</div>`;
+  const bizDaysDiff = (bizDays !== null && bizDaysPrev !== null) ? bizDays - bizDaysPrev : null;
+  const holidayNote = `<div class="bizdays-holidays">현장 일보 기준 · 작업일 1일, 토요일 작업 0.5일</div>`;
   const topHtml = `<div class="snap-metric">
       <div class="label">매출액${isQ() ? ` (${cur.shortLabel} 합계)` : ''}</div>
       <div class="value">${fmtWon(revV)}</div>
@@ -1460,7 +1430,7 @@ function renderSnapshot(){
     </div>
     <div class="snap-metric bizdays">
       <div class="label">${CUR_WORD()} 영업일수${cur.partial ? ` (${cur.idxs.length}개월)` : ''}</div>
-      <div class="value">${bizDays}일</div>
+      <div class="value">${bizDays === null ? '-' : bizDays + '일'}</div>
       <div class="deltas">${deltaBadgeCount(bizDaysDiff,'일',PW+'대비 ')}</div>
       ${holidayNote}
     </div>`;
